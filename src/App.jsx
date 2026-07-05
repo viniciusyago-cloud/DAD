@@ -52,6 +52,9 @@ const classify = (i, c, a) => {
 const ringClass = (p) =>
   p === "Archer" ? "archer" : p === "Cavalry" ? "cavalry" : p === "Infantry" ? "infantry" : p === "Balanced" ? "balanced" : "";
 
+// Order used by the "Type" sort — groups members by troop profile
+const PROFILE_ORDER = { Archer: 0, Cavalry: 1, Infantry: 2, Balanced: 3, Incomplete: 4 };
+
 // Compact number formatter — 548000 -> "548k", 1750000 -> "1.75M"
 const fmt = (n) => {
   if (!n) return "0";
@@ -65,7 +68,7 @@ export default function App() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
-  const [sortBy, setSortBy] = useState("might"); // might | total | name
+  const [sortBy, setSortBy] = useState("might"); // might | type | name
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState("");
   const [menuId, setMenuId] = useState(null);
@@ -133,8 +136,8 @@ export default function App() {
     }
     v = [...v].sort((a, b) => {
       if (sortBy === "name") return (a.name || "").localeCompare(b.name || "");
-      if (sortBy === "might") return Number(b.power || 0) - Number(a.power || 0);
-      return b.total - a.total; // total
+      if (sortBy === "type") return (PROFILE_ORDER[a.profile] - PROFILE_ORDER[b.profile]) || (b.total - a.total);
+      return b.total - a.total; // might = army size (total troops)
     });
     return v;
   }, [rows, search, sortBy]);
@@ -248,7 +251,7 @@ export default function App() {
           </div>
           <div className="seg">
             <button className={sortBy === "might" ? "on" : ""} onClick={() => setSortBy("might")}>Might</button>
-            <button className={sortBy === "total" ? "on" : ""} onClick={() => setSortBy("total")}>Total</button>
+            <button className={sortBy === "type" ? "on" : ""} onClick={() => setSortBy("type")}>Type</button>
             <button className={sortBy === "name" ? "on" : ""} onClick={() => setSortBy("name")}>Name</button>
           </div>
         </div>
