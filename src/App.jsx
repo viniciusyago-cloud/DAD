@@ -65,7 +65,7 @@ export default function App() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
-  const [sortBy, setSortBy] = useState("might"); // might | total | name
+  const [sortBy, setSortBy] = useState("total"); // total | name
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState("");
   const [menuId, setMenuId] = useState(null);
@@ -133,8 +133,7 @@ export default function App() {
     }
     v = [...v].sort((a, b) => {
       if (sortBy === "name") return (a.name || "").localeCompare(b.name || "");
-      if (sortBy === "might") return Number(b.power || 0) - Number(a.power || 0);
-      return b.total - a.total; // total
+      return b.total - a.total; // total = army size (troops)
     });
     return v;
   }, [rows, search, sortBy]);
@@ -247,7 +246,6 @@ export default function App() {
             <input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <div className="seg">
-            <button className={sortBy === "might" ? "on" : ""} onClick={() => setSortBy("might")}>Might</button>
             <button className={sortBy === "total" ? "on" : ""} onClick={() => setSortBy("total")}>Total</button>
             <button className={sortBy === "name" ? "on" : ""} onClick={() => setSortBy("name")}>Name</button>
           </div>
