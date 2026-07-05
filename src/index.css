@@ -146,6 +146,37 @@ button, input, select { font-family: inherit; }
 .btn-gold:disabled { opacity: .5; cursor: default; }
 .sheet-remove { display: block; width: 100%; margin-top: 14px; padding: 11px; background: transparent; border: none; color: var(--arch); font-weight: 700; font-size: 13px; cursor: pointer; }
 
+/* ---------- Change log (/dados) ---------- */
+.logs { padding-bottom: 40px; }
+.log-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 6px 2px 4px; }
+.log-header .eyebrow { font-size: 9px; font-weight: 700; color: var(--gold); letter-spacing: 0.24em; text-transform: uppercase; margin-bottom: 5px; }
+.log-title { font-family: var(--font-display); font-size: 30px; font-weight: 700; line-height: 1; margin: 0; }
+.log-back { flex-shrink: 0; font-size: 12px; font-weight: 700; color: var(--ink-dim); text-decoration: none; padding: 8px 12px; border-radius: 9px; background: var(--well); box-shadow: 0 0 0 1px var(--edge); }
+.log-back:hover { color: var(--gold-lt); box-shadow: 0 0 0 1px var(--gold-dk); }
+
+.log-list { display: flex; flex-direction: column; margin-top: 6px; position: relative; }
+.log-list::before { content: ""; position: absolute; left: 5px; top: 10px; bottom: 10px; width: 2px; background: var(--edge); border-radius: 1px; }
+.log { position: relative; display: flex; gap: 14px; padding: 10px 0 10px 0; }
+.log-dot { position: relative; z-index: 1; flex-shrink: 0; width: 12px; height: 12px; margin-top: 4px; border-radius: 50%; box-shadow: 0 0 0 3px var(--ground); }
+.log-dot.add { background: var(--inf); } .log-dot.edit { background: var(--gold); } .log-dot.del { background: var(--arch); }
+.log-body { flex: 1; min-width: 0; background: linear-gradient(180deg, var(--panel-2), var(--panel)); border-radius: 12px; padding: 11px 13px; box-shadow: 0 0 0 1px var(--edge), inset 0 1px 0 #ffffff0a; }
+.log-head { display: flex; align-items: center; gap: 8px; }
+.log-name { font-size: 15px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.log-badge { flex-shrink: 0; font-size: 8.5px; font-weight: 800; letter-spacing: 0.06em; padding: 3px 8px; border-radius: 5px; text-transform: uppercase; }
+.log-badge.add { background: #123125; color: #7fd3ac; box-shadow: inset 0 0 0 1px #1e5a40; }
+.log-badge.edit { background: #3a3112; color: #f2cf6a; box-shadow: inset 0 0 0 1px #6a5a1e; }
+.log-badge.del { background: #3a1f12; color: #ff9a6a; box-shadow: inset 0 0 0 1px #6a381e; }
+.log-time { flex-shrink: 0; margin-left: auto; font-size: 11px; font-weight: 600; color: var(--ink-mute); font-variant-numeric: tabular-nums; }
+.log-changes { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+.chg-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.chg-field { color: var(--ink-dim); font-weight: 600; min-width: 66px; }
+.chg-old { color: var(--ink-mute); text-decoration: line-through; text-decoration-color: var(--edge-hi); }
+.chg-arrow { color: var(--ink-mute); }
+.chg-new { color: var(--ink); }
+.chg-row.inf .chg-new { color: var(--inf); } .chg-row.cav .chg-new { color: var(--cav); } .chg-row.arch .chg-new { color: var(--arch); }
+.chg-pill { display: inline-flex; margin: 8px 8px 0 0; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px; background: var(--well); box-shadow: inset 0 1px 2px #0006, 0 0 0 1px var(--edge); font-variant-numeric: tabular-nums; }
+.chg-pill.inf { color: var(--inf); } .chg-pill.cav { color: var(--cav); } .chg-pill.arch { color: var(--arch); }
+
 /* ---------- Toast ---------- */
 .toast { position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%); z-index: 200; background: #1f2b37; color: var(--ink); padding: 10px 18px; border-radius: 20px; font-size: 12.5px; font-weight: 600; box-shadow: 0 0 0 1px var(--gold-dk), 0 8px 26px #000b; animation: rise .2s ease; }
 @keyframes rise { from { opacity: 0; transform: translateX(-50%) translateY(6px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
