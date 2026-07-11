@@ -396,3 +396,8 @@ button, input, select { font-family: inherit; }
 .ta-col-h .gi, .ta-member .gi { margin-right: 6px; }
 .ta-hold-line .gi { margin-right: 5px; margin-top: 1px; }
 .ta-found .gi { vertical-align: -2px; }
+
+/* ---------- Lane mini-map inside team cards ---------- */
+.ta-lanemap { display: block; width: 100%; height: auto; max-height: 320px; border-radius: 10px; margin-bottom: 10px; background: #b99a72; }
+.ta-path.muted { opacity: 0.75; margin-bottom: 11px; }
+.ta-path.muted .ta-tag { font-size: 10px; padding: 2px 7px; }

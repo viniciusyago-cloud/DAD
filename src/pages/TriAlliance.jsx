@@ -228,6 +228,54 @@ function BattleMap({ active }) {
   );
 }
 
+
+/* Mini-map inside each team card: real map cropped to the lane's route */
+function LaneMap({ t }) {
+  const pts = t.path.map((b) => N[b]);
+  const extra = HOLD_PINS.filter((h) => Number(h.g[1]) === t.n).map((h) => N[h.at]);
+  const xs = [...pts, ...extra].map((p) => p[0]);
+  const ys = [...pts, ...extra].map((p) => p[1]);
+  const x0 = Math.max(0, Math.min(...xs) - 100);
+  const y0 = Math.max(0, Math.min(...ys) - 150);
+  const x1 = Math.min(1920, Math.max(...xs) + 100);
+  const y1 = Math.min(1401, Math.max(...ys) + 90);
+  const ptsStr = pts.map((p) => p.join(",")).join(" ");
+  const last = pts[pts.length - 1];
+  return (
+    <svg className="ta-lanemap" viewBox={`${x0} ${y0} ${x1 - x0} ${y1 - y0}`} style={{ boxShadow: `0 0 0 1.5px ${t.color}66` }} aria-label={`Route map for ${t.team}`}>
+      <image href="/tri/map.jpg" x="0" y="0" width="1920" height="1401" />
+      <polyline points={ptsStr} fill="none" stroke="#0d1218" strokeWidth="17" strokeLinecap="round" strokeLinejoin="round" opacity="0.55" />
+      <polyline points={ptsStr} fill="none" stroke={t.color} strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" markerMid={`url(#larr${t.n})`} />
+      <polyline className="ta-flow" points={ptsStr} fill="none" stroke="#ffffff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 42" opacity="0.85" />
+      <defs>
+        <marker id={`larr${t.n}`} viewBox="0 0 10 10" refX="7" refY="5" markerWidth="2.6" markerHeight="2.6" orient="auto-start-reverse" markerUnits="strokeWidth">
+          <path d="M0 0 L10 5 L0 10 z" fill={t.color} />
+        </marker>
+      </defs>
+      {t.path.map((b) => (
+        <circle key={b} cx={N[b][0]} cy={N[b][1]} r="9" fill={t.color} stroke="#0d1218" strokeWidth="3" />
+      ))}
+      <circle cx={pts[0][0]} cy={pts[0][1]} r="26" fill={t.color} stroke="#0d1218" strokeWidth="4" />
+      <text x={pts[0][0]} y={pts[0][1] + 10} textAnchor="middle" className="ta-startn">{t.n}</text>
+      <g transform={`translate(${last[0]}, ${last[1]})`}>
+        <line x1="0" y1="0" x2="0" y2="-50" stroke="#0d1218" strokeWidth="8" strokeLinecap="round" />
+        <line x1="0" y1="0" x2="0" y2="-50" stroke="#f4ecda" strokeWidth="4" strokeLinecap="round" />
+        <path d="M0 -50 L36 -40 L0 -30 Z" fill={t.color} stroke="#0d1218" strokeWidth="2.5" />
+      </g>
+      {HOLD_PINS.filter((h) => Number(h.g[1]) === t.n).map((h, i) => {
+        const [x, y] = N[h.at];
+        return (
+          <g key={i}>
+            <path d={pinPath(x, y - 14)} fill={h.c} stroke="#0d1218" strokeWidth="3.5" />
+            <circle cx={x} cy={y - 44} r="12" fill="#0d1218" opacity="0.85" />
+            <text x={x} y={y - 39} textAnchor="middle" className="ta-pintxt">{h.g}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function TeamCard({ r }) {
   return (
     <article className="ta-route" style={{ boxShadow: `0 0 0 1px ${r.color}66, inset 0 1px 0 #ffffff0a, 0 3px 10px #00000055` }}>
@@ -236,7 +284,8 @@ function TeamCard({ r }) {
         <span className="ta-route-name">{r.name}</span>
       </div>
       <div className="ta-route-obj">{r.mission}</div>
-      <div className="ta-path">
+      <LaneMap t={r} />
+      <div className="ta-path muted">
         {r.path.map((b, i) => (
           <React.Fragment key={i}>
             <Tag color={b === "B24" && r.n === 5 ? r.color : undefined}>{b}{b === "B24" && r.n === 5 ? " HOLD" : ""}</Tag>
