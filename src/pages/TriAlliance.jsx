@@ -13,7 +13,7 @@ const TEAMS = [
   {
     n: 1, team: "A1+D1", color: "#f0564e", name: "Deep Left Flank",
     mission: "Sweep the far-left lane and take enemy Garrison A24",
-    path: ["B1", "B4", "B8", "B12", "B18", "A19", "A13", "A20", "A24"],
+    segs: [["B1", "B4", "B8", "B12", "B18", "A19", "A13", "A20", "A24"]], flags: ["A24"],
     attackers: ["JoDee", "Sabo", "Jenny"], defenders: ["Toady", "Imrail", "Moon"], sub: "Panda",
     hold: "From min 20, D1 holds A24 once captured",
     timing: "Reach A19 around min 15 · take A24 after min 20 · Temple at min 40",
@@ -21,15 +21,15 @@ const TEAMS = [
   {
     n: 2, team: "A2+D2", color: "#f2d054", name: "Left Corridor",
     mission: "Push the left-center lane and help take enemy Garrison A24",
-    path: ["B2", "B3", "B6", "B7", "B11", "B17", "B27", "A28", "A24"],
+    segs: [["B2", "B3", "B6", "B7", "B11", "B17", "B27", "A28", "A24"]], flags: ["A24"],
     attackers: ["Johann", "Nanya", "Araz"], defenders: ["!!!Skill", "OVI", "Fong"], sub: "Juyopert",
     hold: "From min 20, D2 helps hold A24 once captured",
     timing: "Push from min 5 · cross at B27 around min 15 · Temple at min 40",
   },
   {
     n: 3, team: "A3+D3", color: "#4ad0e0", name: "Central Push",
-    mission: "Drive the middle lane, cross at B27 and take A30",
-    path: ["B5", "B10", "B15", "B22", "B16", "B23", "B27", "A28", "A30"],
+    mission: "Drive the middle lane, take B26 on the way, cross at B27 and take A30",
+    segs: [["B5", "B10", "B15", "B22", "B16", "B23", "B27", "A28", "A30"], ["B23", "B26"]], flags: ["A30", "B26"],
     attackers: ["Salles", "Fgr1", "Www"], defenders: ["Oxy", "Leclerc", "Rumiko"], sub: "Beske",
     hold: "From min 20, D3 crosses to C24 using Transit Hubs",
     timing: "Reach A30 by min 25 · Temple at min 40",
@@ -37,18 +37,18 @@ const TEAMS = [
   {
     n: 4, team: "A4+D4", color: "#4a90f2", name: "Right-Center Assault",
     mission: "Secure our B29 and B31, then cross to take A30 and A29",
-    path: ["B9", "B14", "B21", "B25", "B29", "B30", "B31", "A30", "A29"],
+    segs: [["B9", "B14", "B21", "B25", "B29", "B30", "B31", "A30", "A29"]], flags: ["A29"],
     attackers: ["IK33", "Epson", "Mastergwyn"], defenders: ["Jungki Oppa", "RF", "Neduts"], sub: "Eyin",
     hold: "D4 holds our B29, then crosses to C29 using Transit Hubs",
     timing: "Secure B29 by min 10 · push A30 and A29 · Temple at min 40",
   },
   {
     n: 5, team: "A5+D5", color: "#a878f0", name: "Right Defense",
-    mission: "Protect our Garrison B24, then push north into C18 and C27",
-    path: ["B13", "B20", "B24", "B28", "B19", "C18", "C27"],
+    mission: "Protect our Garrison B24 — three exits into zone C when safe",
+    segs: [["B13", "B20", "B24", "B28"], ["B20", "B19", "C18"], ["B28", "C27"], ["B28", "B30", "C31"]], flags: ["C18", "C27", "C31"],
     attackers: ["Yam", "Hammelbock", "KZ"], defenders: ["Susu", "Bear", "Sadie"], sub: "Open slot",
     hold: "D5 stays on B24 the whole match · watch the B19 / B28 entrances",
-    timing: "Anchor B24 from the start · cross at B19 only when safe",
+    timing: "Anchor B24 from the start · exits: B19>C18 · B28>C27 · B30>C31",
     warning: "B24 can never be left alone",
   },
 ];
@@ -115,7 +115,7 @@ const N = {
   B8: [300, 625], B9: [565, 138], B10: [400, 350], B11: [395, 580], B12: [410, 700],
   B13: [725, 150], B14: [540, 255], B16: [480, 505], B17: [497, 610], B18: [305, 795],
   B20: [812, 225], B21: [570, 318], B22: [545, 435], B23: [585, 575],
-  B24: [750, 290], B25: [672, 365], B27: [620, 672], B28: [880, 325], B29: [775, 435],
+  B24: [750, 290], B25: [672, 365], B26: [675, 515], B27: [620, 672], B28: [880, 325], B29: [775, 435],
   B30: [845, 410], B31: [770, 545],
   A13: [505, 1020], A19: [285, 990], A20: [587, 960], A24: [683, 890], A25: [870, 890],
   A28: [798, 815], A29: [973, 825], A30: [895, 765],
@@ -139,26 +139,59 @@ function Markers() {
         const [x, y] = N[b];
         return (
           <g key={b}>
-            <rect x={x - 14} y={y - 14} width="28" height="28" transform={`rotate(45 ${x} ${y})`} fill="#0d1218" opacity="0.8" />
-            <rect x={x - 10} y={y - 10} width="20" height="20" transform={`rotate(45 ${x} ${y})`} fill="none" stroke="#f2824a" strokeWidth="4.5" />
+            <rect x={x - 11} y={y - 11} width="22" height="22" transform={`rotate(45 ${x} ${y})`} fill="#0d1218" opacity="0.7" />
+            <rect x={x - 8} y={y - 8} width="16" height="16" transform={`rotate(45 ${x} ${y})`} fill="none" stroke="#f2824a" strokeWidth="3.5" />
           </g>
         );
       })}
       {CAPTURE.map((b) => {
         const [x, y] = N[b];
         return (
-          <g key={b} stroke="#f0564e" strokeWidth="5.5" fill="none">
-            <circle cx={x} cy={y} r="25" />
-            <path d={`M${x},${y - 35} v12 M${x},${y + 23} v12 M${x - 35},${y} h12 M${x + 23},${y} h12`} />
+          <g key={b} stroke="#f0564e" strokeWidth="4.5" fill="none">
+            <circle cx={x} cy={y} r="19" />
+            <path d={`M${x},${y - 27} v9 M${x},${y + 18} v9 M${x - 27},${y} h9 M${x + 18},${y} h9`} />
           </g>
         );
       })}
       {DEFEND.map((b) => {
         const [x, y] = N[b];
         return (
-          <path key={b} d={`M${x},${y - 58} l21,8 v16 q0,17 -21,28 q-21,-11 -21,-28 v-16 z`} fill="#ecc25a" stroke="#0d1218" strokeWidth="3.5" />
+          <path key={b} d={`M${x},${y - 46} l17,7 v13 q0,14 -17,23 q-17,-9 -17,-23 v-13 z`} fill="#ecc25a" fillOpacity="0.92" stroke="#0d1218" strokeWidth="3" />
         );
       })}
+    </g>
+  );
+}
+
+
+/* Route renderer: all segments of a lane — casing, color, flow, dots, start badge, flags */
+function Route({ t }) {
+  const nodes = [...new Set(t.segs.flat())];
+  const start = t.segs[0][0];
+  return (
+    <g>
+      {t.segs.map((seg, i) => {
+        const pts = seg.map((b) => N[b].join(",")).join(" ");
+        return (
+          <g key={i}>
+            <polyline points={pts} fill="none" stroke="#0d1218" strokeWidth="13" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
+            <polyline points={pts} fill="none" stroke={t.color} strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" markerMid={`url(#arr${t.n})`} />
+            <polyline className="ta-flow" points={pts} fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 42" opacity="0.8" />
+          </g>
+        );
+      })}
+      {nodes.map((b) => (
+        <circle key={b} cx={N[b][0]} cy={N[b][1]} r="6.5" fill={t.color} stroke="#0d1218" strokeWidth="2.5" />
+      ))}
+      <circle cx={N[start][0]} cy={N[start][1]} r="19" fill={t.color} stroke="#0d1218" strokeWidth="3.5" />
+      <text x={N[start][0]} y={N[start][1] + 8} textAnchor="middle" className="ta-startn">{t.n}</text>
+      {t.flags.map((f) => (
+        <g key={f} transform={`translate(${N[f][0]}, ${N[f][1]})`}>
+          <line x1="0" y1="0" x2="0" y2="-38" stroke="#0d1218" strokeWidth="6.5" strokeLinecap="round" />
+          <line x1="0" y1="0" x2="0" y2="-38" stroke="#f4ecda" strokeWidth="3.2" strokeLinecap="round" />
+          <path d="M0 -38 L27 -31 L0 -24 Z" fill={t.color} stroke="#0d1218" strokeWidth="2" />
+        </g>
+      ))}
     </g>
   );
 }
@@ -201,27 +234,12 @@ function BattleMap({ active }) {
                   {/* Temple pulse */}
                   <circle className="ta-pulse" cx={TEMPLE[0]} cy={TEMPLE[1]} r="86" fill="none" stroke="#ffe08a" strokeWidth="7" />
 
-                  {/* routes: dark casing + colored line + flowing dash + direction arrows */}
+                  {/* routes */}
                   {TEAMS.map((t) => {
-                    const pts = t.path.map((b) => N[b].join(",")).join(" ");
                     const o = on(t.n) ? 1 : 0.08;
                     return (
                       <g key={t.n} opacity={o} style={{ transition: "opacity .25s" }}>
-                        <polyline points={pts} fill="none" stroke="#0d1218" strokeWidth="17" strokeLinecap="round" strokeLinejoin="round" opacity="0.55" />
-                        <polyline points={pts} fill="none" stroke={t.color} strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" markerMid={`url(#arr${t.n})`} />
-                        <polyline className="ta-flow" points={pts} fill="none" stroke="#ffffff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 42" opacity="0.85" />
-                        {t.path.map((b) => (
-                          <circle key={b} cx={N[b][0]} cy={N[b][1]} r="8" fill={t.color} stroke="#0d1218" strokeWidth="3" />
-                        ))}
-                        <g>
-                          <circle cx={N[t.path[0]][0]} cy={N[t.path[0]][1]} r="24" fill={t.color} stroke="#0d1218" strokeWidth="4" />
-                          <text x={N[t.path[0]][0]} y={N[t.path[0]][1] + 9} textAnchor="middle" className="ta-startn">{t.n}</text>
-                        </g>
-                        <g transform={`translate(${N[t.path[t.path.length - 1]][0]}, ${N[t.path[t.path.length - 1]][1]})`}>
-                          <line x1="0" y1="0" x2="0" y2="-46" stroke="#0d1218" strokeWidth="8" strokeLinecap="round" />
-                          <line x1="0" y1="0" x2="0" y2="-46" stroke="#f4ecda" strokeWidth="4" strokeLinecap="round" />
-                          <path d="M0 -46 L34 -37 L0 -28 Z" fill={t.color} stroke="#0d1218" strokeWidth="2.5" />
-                        </g>
+                        <Route t={t} />
                       </g>
                     );
                   })}
@@ -249,37 +267,23 @@ function BattleMap({ active }) {
 
 /* Mini-map inside each team card: real map cropped to the lane's route */
 function LaneMap({ t }) {
-  const pts = t.path.map((b) => N[b]);
+  const pts = [...new Set(t.segs.flat())].map((b) => N[b]);
   const extra = (EXTRA_VIEW[t.n] || []).map((b) => N[b]);
   const xs = [...pts, ...extra].map((p) => p[0]);
   const ys = [...pts, ...extra].map((p) => p[1]);
   const x0 = Math.max(0, Math.min(...xs) - 100);
-  const y0 = Math.max(0, Math.min(...ys) - 150);
+  const y0 = Math.max(0, Math.min(...ys) - 130);
   const x1 = Math.min(1920, Math.max(...xs) + 100);
   const y1 = Math.min(1401, Math.max(...ys) + 90);
-  const ptsStr = pts.map((p) => p.join(",")).join(" ");
-  const last = pts[pts.length - 1];
   return (
     <svg className="ta-lanemap" viewBox={`${x0} ${y0} ${x1 - x0} ${y1 - y0}`} style={{ boxShadow: `0 0 0 1.5px ${t.color}66` }} aria-label={`Route map for ${t.team}`}>
       <image href="/tri/map.jpg" x="0" y="0" width="1920" height="1401" />
-      <polyline points={ptsStr} fill="none" stroke="#0d1218" strokeWidth="17" strokeLinecap="round" strokeLinejoin="round" opacity="0.55" />
-      <polyline points={ptsStr} fill="none" stroke={t.color} strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" markerMid={`url(#larr${t.n})`} />
-      <polyline className="ta-flow" points={ptsStr} fill="none" stroke="#ffffff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 42" opacity="0.85" />
       <defs>
-        <marker id={`larr${t.n}`} viewBox="0 0 10 10" refX="7" refY="5" markerWidth="2.6" markerHeight="2.6" orient="auto-start-reverse" markerUnits="strokeWidth">
+        <marker id={`arr${t.n}`} viewBox="0 0 10 10" refX="7" refY="5" markerWidth="2.6" markerHeight="2.6" orient="auto-start-reverse" markerUnits="strokeWidth">
           <path d="M0 0 L10 5 L0 10 z" fill={t.color} />
         </marker>
       </defs>
-      {t.path.map((b) => (
-        <circle key={b} cx={N[b][0]} cy={N[b][1]} r="9" fill={t.color} stroke="#0d1218" strokeWidth="3" />
-      ))}
-      <circle cx={pts[0][0]} cy={pts[0][1]} r="26" fill={t.color} stroke="#0d1218" strokeWidth="4" />
-      <text x={pts[0][0]} y={pts[0][1] + 10} textAnchor="middle" className="ta-startn">{t.n}</text>
-      <g transform={`translate(${last[0]}, ${last[1]})`}>
-        <line x1="0" y1="0" x2="0" y2="-50" stroke="#0d1218" strokeWidth="8" strokeLinecap="round" />
-        <line x1="0" y1="0" x2="0" y2="-50" stroke="#f4ecda" strokeWidth="4" strokeLinecap="round" />
-        <path d="M0 -50 L36 -40 L0 -30 Z" fill={t.color} stroke="#0d1218" strokeWidth="2.5" />
-      </g>
+      <Route t={t} />
       <Markers />
     </svg>
   );
@@ -294,12 +298,17 @@ function TeamCard({ r }) {
       </div>
       <div className="ta-route-obj">{r.mission}</div>
       <LaneMap t={r} />
-      <div className="ta-path muted">
-        {r.path.map((b, i) => (
-          <React.Fragment key={i}>
-            <Tag color={b === "B24" && r.n === 5 ? r.color : undefined}>{b}{b === "B24" && r.n === 5 ? " HOLD" : ""}</Tag>
-            {i < r.path.length - 1 && <span className="ta-arrow">→</span>}
-          </React.Fragment>
+      <div className="ta-segs">
+        {r.segs.map((seg, si) => (
+          <div key={si} className="ta-path muted">
+            {si > 0 && <span className="ta-branch">↳</span>}
+            {seg.map((b, i) => (
+              <React.Fragment key={i}>
+                <Tag color={b === "B24" && r.n === 5 ? r.color : undefined}>{b}{b === "B24" && r.n === 5 ? " HOLD" : ""}</Tag>
+                {i < seg.length - 1 && <span className="ta-arrow">→</span>}
+              </React.Fragment>
+            ))}
+          </div>
         ))}
       </div>
       <div className="ta-cols">

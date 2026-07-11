@@ -401,3 +401,9 @@ button, input, select { font-family: inherit; }
 .ta-lanemap { display: block; width: 100%; height: auto; max-height: 320px; border-radius: 10px; margin-bottom: 10px; background: #b99a72; }
 .ta-path.muted { opacity: 0.75; margin-bottom: 11px; }
 .ta-path.muted .ta-tag { font-size: 10px; padding: 2px 7px; }
+
+/* branched route tags + smaller start number */
+.ta-segs { display: flex; flex-direction: column; gap: 4px; margin-bottom: 11px; }
+.ta-segs .ta-path { margin-bottom: 0; }
+.ta-branch { font-size: 12px; color: var(--ink-mute); font-weight: 700; margin-right: 2px; }
+.ta-startn { font-size: 21px; }
