@@ -33,9 +33,8 @@ export default function BattleCountdown({ target = BATTLE_START, durationMin = B
 
   return (
     <section className="cd">
-      <div className="lbl">Next battle starts in</div>
+      <div className="lbl">Battle starts in</div>
       {body}
-      <div className="cd-ctx">TODAY · Saturday, July 11 · 14:00 UTC · 11:00 São Paulo · 15:00 London · 23:00 Tokyo</div>
     </section>
   );
 }

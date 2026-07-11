@@ -369,3 +369,30 @@ button, input, select { font-family: inherit; }
 .ta-avoid { display: flex; align-items: center; gap: 11px; font-weight: 600; color: var(--ink-dim); line-height: 1.5; }
 .ta-avoid b { color: #ff9a6a; }
 .ta-avoid-img { width: 46px; height: 46px; object-fit: contain; flex-shrink: 0; border-radius: 10px; box-shadow: 0 0 0 1.5px #6a381e; filter: saturate(0.75); }
+
+/* ---------- Battle map v2: zoom/pan + rich overlay ---------- */
+.ta-realmap { width: 100%; }
+.ta-mapbox { position: relative; }
+.ta-mapwrap { width: 100% !important; aspect-ratio: 1920 / 1401; border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px var(--edge), inset 0 0 18px #0009; background: #b99a72; }
+.ta-mapinner { width: 100%; }
+.ta-mapctl { position: absolute; top: 9px; right: 9px; z-index: 5; display: flex; flex-direction: column; gap: 5px; }
+.ta-mapctl button { width: 34px; height: 34px; border-radius: 9px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; background: rgba(13,18,24,0.88); box-shadow: 0 0 0 1px var(--edge-hi), 0 3px 8px #0008; }
+.ta-mapctl button:active { transform: scale(0.94); }
+.ta-zonechips text { font-size: 26px; font-weight: 800; letter-spacing: 2px; font-family: var(--font-sans); }
+.ta-startn { font-size: 26px; font-weight: 800; fill: #10151b; font-family: var(--font-sans); }
+.ta-pintxt { font-size: 13px; font-weight: 800; fill: #f4ecda; font-family: var(--font-sans); }
+.ta-pulse { transform-origin: center; transform-box: fill-box; animation: mappulse 2.2s ease-in-out infinite; }
+.ta-pulse.slow { animation-duration: 3.2s; }
+@keyframes mappulse { 0%,100% { opacity: 0.85; } 50% { opacity: 0.25; } }
+.ta-flow { animation: mapflow 1.4s linear infinite; }
+@keyframes mapflow { to { stroke-dashoffset: -47; } }
+@media (prefers-reduced-motion: reduce) { .ta-pulse, .ta-flow { animation: none; } }
+.ta-maplegend { display: flex; flex-wrap: wrap; gap: 7px 16px; margin-top: 10px; padding: 0 2px; }
+.ta-maplegend span { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; color: var(--ink-dim); }
+.lg-start { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; border-radius: 50%; background: var(--gold); color: #10151b; font-size: 11px; font-weight: 800; font-style: normal; }
+.lg-pulse { width: 15px; height: 15px; border-radius: 50%; border: 2.5px solid var(--gold-lt); animation: mappulse 2.2s ease-in-out infinite; }
+.ta-rule-ic { flex-shrink: 0; width: 34px; height: 34px; border-radius: 9px; background: var(--well); box-shadow: inset 0 0 0 1px var(--edge); display: flex; align-items: center; justify-content: center; }
+.gi { display: inline-block; vertical-align: -2px; flex-shrink: 0; }
+.ta-col-h .gi, .ta-member .gi { margin-right: 6px; }
+.ta-hold-line .gi { margin-right: 5px; margin-top: 1px; }
+.ta-found .gi { vertical-align: -2px; }
