@@ -23,7 +23,7 @@ const TEAMS = [
     mission: "Push the left-center lane and help take enemy Garrison A24",
     path: ["B2", "B3", "B6", "B7", "B11", "B17", "B27", "A28", "A24"],
     attackers: ["Johann", "Nanya", "Araz"], defenders: ["!!!Skill", "OVI", "Fong"], sub: "Juyopert",
-    hold: "From min 20, D2 holds A25 / A26",
+    hold: "From min 20, D2 helps hold A24 once captured",
     timing: "Push from min 5 · cross at B27 around min 15 · Temple at min 40",
   },
   {
@@ -39,7 +39,7 @@ const TEAMS = [
     mission: "Secure our B29 and B31, then cross to take A30 and A29",
     path: ["B9", "B14", "B21", "B25", "B29", "B30", "B31", "A30", "A29"],
     attackers: ["IK33", "Epson", "Mastergwyn"], defenders: ["Jungki Oppa", "RF", "Neduts"], sub: "Eyin",
-    hold: "From min 20, D4 crosses to C29 using Transit Hubs",
+    hold: "D4 holds our B29, then crosses to C29 using Transit Hubs",
     timing: "Secure B29 by min 10 · push A30 and A29 · Temple at min 40",
   },
   {
@@ -47,7 +47,7 @@ const TEAMS = [
     mission: "Protect our Garrison B24, then push north into C18 and C27",
     path: ["B13", "B20", "B24", "B28", "B19", "C18", "C27"],
     attackers: ["Yam", "Hammelbock", "KZ"], defenders: ["Susu", "Bear", "Sadie"], sub: "Open slot",
-    hold: "D5 stays on B24 the whole match · A5 covers B29",
+    hold: "D5 stays on B24 the whole match · watch the B19 / B28 entrances",
     timing: "Anchor B24 from the start · cross at B19 only when safe",
     warning: "B24 can never be left alone",
   },
@@ -123,16 +123,44 @@ const N = {
   Temple: [965, 570],
 };
 const TEMPLE = N.Temple;
-const GARRISONS = ["A24", "B24", "C24"];
-const HOLD_PINS = [
-  { at: "A24", c: "#f0564e", g: "D1" }, { at: "A25", c: "#f2d054", g: "D2" },
-  { at: "C24", c: "#4ad0e0", g: "D3" }, { at: "C29", c: "#4a90f2", g: "D4" },
-  { at: "B24", c: "#a878f0", g: "D5" }, { at: "B29", c: "#a878f0", g: "A5" },
-];
+/* Strategy markers:
+   CAPTURE — enemy Garrisons + 29 towers we must take
+   DEFEND  — our own Garrison and 29 tower
+   ENTRY   — the doors into OUR territory (bridges/crossings) */
+const CAPTURE = ["A24", "C24", "A29", "C29"];
+const DEFEND = ["B24", "B29"];
+const ENTRY = ["B18", "B27", "B31", "B30", "B28", "B19"];
+const EXTRA_VIEW = { 3: ["C24"], 4: ["C29"] };
 
-function pinPath(x, y, s = 30) {
-  // map-style teardrop pin, tip at (x,y)
-  return `M${x},${y} C${x - s * 0.62},${y - s * 0.75} ${x - s * 0.62},${y - s * 1.5} ${x},${y - s * 1.5} C${x + s * 0.62},${y - s * 1.5} ${x + s * 0.62},${y - s * 0.75} ${x},${y} Z`;
+function Markers() {
+  return (
+    <g>
+      {ENTRY.map((b) => {
+        const [x, y] = N[b];
+        return (
+          <g key={b}>
+            <rect x={x - 14} y={y - 14} width="28" height="28" transform={`rotate(45 ${x} ${y})`} fill="#0d1218" opacity="0.8" />
+            <rect x={x - 10} y={y - 10} width="20" height="20" transform={`rotate(45 ${x} ${y})`} fill="none" stroke="#f2824a" strokeWidth="4.5" />
+          </g>
+        );
+      })}
+      {CAPTURE.map((b) => {
+        const [x, y] = N[b];
+        return (
+          <g key={b} stroke="#f0564e" strokeWidth="5.5" fill="none">
+            <circle cx={x} cy={y} r="25" />
+            <path d={`M${x},${y - 35} v12 M${x},${y + 23} v12 M${x - 35},${y} h12 M${x + 23},${y} h12`} />
+          </g>
+        );
+      })}
+      {DEFEND.map((b) => {
+        const [x, y] = N[b];
+        return (
+          <path key={b} d={`M${x},${y - 58} l21,8 v16 q0,17 -21,28 q-21,-11 -21,-28 v-16 z`} fill="#ecc25a" stroke="#0d1218" strokeWidth="3.5" />
+        );
+      })}
+    </g>
+  );
 }
 
 function BattleMap({ active }) {
@@ -170,11 +198,8 @@ function BattleMap({ active }) {
                     <text x="1690" y="331" textAnchor="middle" fill="#4ad0e0">C — ENEMY</text>
                   </g>
 
-                  {/* high-value pulses: Temple + Garrisons */}
+                  {/* Temple pulse */}
                   <circle className="ta-pulse" cx={TEMPLE[0]} cy={TEMPLE[1]} r="86" fill="none" stroke="#ffe08a" strokeWidth="7" />
-                  {GARRISONS.map((g) => (
-                    <circle key={g} className="ta-pulse slow" cx={N[g][0]} cy={N[g][1]} r="44" fill="none" stroke="#ffe08a" strokeWidth="5" />
-                  ))}
 
                   {/* routes: dark casing + colored line + flowing dash + direction arrows */}
                   {TEAMS.map((t) => {
@@ -201,19 +226,8 @@ function BattleMap({ active }) {
                     );
                   })}
 
-                  {/* defense hold pins */}
-                  {HOLD_PINS.map((h, i) => {
-                    const teamN = Number(h.g[1]);
-                    const o = on(teamN) ? 1 : 0.08;
-                    const [x, y] = N[h.at];
-                    return (
-                      <g key={i} opacity={o} style={{ transition: "opacity .25s" }}>
-                        <path d={pinPath(x, y - 14)} fill={h.c} stroke="#0d1218" strokeWidth="3.5" />
-                        <circle cx={x} cy={y - 44} r="11" fill="#0d1218" opacity="0.85" />
-                        <text x={x} y={y - 39.5} textAnchor="middle" className="ta-pintxt">{h.g}</text>
-                      </g>
-                    );
-                  })}
+                  {/* strategy markers */}
+                  <Markers />
                 </svg>
               </div>
             </TransformComponent>
@@ -224,8 +238,9 @@ function BattleMap({ active }) {
       <div className="ta-maplegend">
         <span><i className="lg-start">1</i> Start</span>
         <span><svg width="26" height="10" viewBox="0 0 26 10" aria-hidden="true"><line x1="1" y1="5" x2="17" y2="5" stroke="var(--gold)" strokeWidth="3" strokeLinecap="round" /><path d="M17 1l8 4-8 4z" fill="var(--gold)" /></svg> Advance</span>
-        <span><svg width="12" height="16" viewBox="0 0 12 16" aria-hidden="true"><path d="M6 16 C2.3 11 2.3 2 6 2 C9.7 2 9.7 11 6 16 Z" fill="var(--gold)" /></svg> Defense holds</span>
-        <span><i className="lg-pulse"></i> High value</span>
+        <span><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#f0564e" strokeWidth="2.6"><circle cx="12" cy="12" r="7" /><path d="M12 1v4M12 19v4M1 12h4M19 12h4" /></svg> Capture (their 24 · 29)</span>
+        <span><svg width="13" height="15" viewBox="0 0 24 26" aria-hidden="true"><path d="M12 1l10 4v8c0 8-5 11-10 13C7 24 2 21 2 13V5l10-4z" fill="#ecc25a" /></svg> Defend (our B24 · B29)</span>
+        <span><svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><rect x="5" y="5" width="10" height="10" transform="rotate(45 10 10)" fill="none" stroke="#f2824a" strokeWidth="2.6" /></svg> Entry point — watch it</span>
       </div>
     </div>
   );
@@ -235,7 +250,7 @@ function BattleMap({ active }) {
 /* Mini-map inside each team card: real map cropped to the lane's route */
 function LaneMap({ t }) {
   const pts = t.path.map((b) => N[b]);
-  const extra = HOLD_PINS.filter((h) => Number(h.g[1]) === t.n).map((h) => N[h.at]);
+  const extra = (EXTRA_VIEW[t.n] || []).map((b) => N[b]);
   const xs = [...pts, ...extra].map((p) => p[0]);
   const ys = [...pts, ...extra].map((p) => p[1]);
   const x0 = Math.max(0, Math.min(...xs) - 100);
@@ -265,16 +280,7 @@ function LaneMap({ t }) {
         <line x1="0" y1="0" x2="0" y2="-50" stroke="#f4ecda" strokeWidth="4" strokeLinecap="round" />
         <path d="M0 -50 L36 -40 L0 -30 Z" fill={t.color} stroke="#0d1218" strokeWidth="2.5" />
       </g>
-      {HOLD_PINS.filter((h) => Number(h.g[1]) === t.n).map((h, i) => {
-        const [x, y] = N[h.at];
-        return (
-          <g key={i}>
-            <path d={pinPath(x, y - 14)} fill={h.c} stroke="#0d1218" strokeWidth="3.5" />
-            <circle cx={x} cy={y - 44} r="12" fill="#0d1218" opacity="0.85" />
-            <text x={x} y={y - 39} textAnchor="middle" className="ta-pintxt">{h.g}</text>
-          </g>
-        );
-      })}
+      <Markers />
     </svg>
   );
 }
