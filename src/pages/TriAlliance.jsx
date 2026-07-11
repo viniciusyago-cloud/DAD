@@ -20,35 +20,35 @@ const TEAMS = [
   },
   {
     n: 2, team: "A2+D2", color: "#f2d054", name: "Left Corridor",
-    mission: "Push the center-left lane down to A28 and A25",
-    path: ["B3", "B6", "B11", "B17", "B23", "B27", "A28", "A25"],
+    mission: "Push the left-center lane and help take enemy Garrison A24",
+    path: ["B2", "B3", "B6", "B7", "B11", "B17", "B27", "A28", "A24"],
     attackers: ["Johann", "Nanya", "Araz"], defenders: ["!!!Skill", "OVI", "Fong"], sub: "Juyopert",
     hold: "From min 20, D2 holds A25 / A26",
-    timing: "Push from min 5 · engage A28 around min 15 · Temple at min 40",
+    timing: "Push from min 5 · cross at B27 around min 15 · Temple at min 40",
   },
   {
     n: 3, team: "A3+D3", color: "#4ad0e0", name: "Central Push",
-    mission: "Drive the middle lane, cross at A28 and take A29 — it blocks their path to the Temple",
-    path: ["B5", "B10", "B16", "B22", "B23", "B27", "A28", "A30", "A29"],
+    mission: "Drive the middle lane, cross at B27 and take A30",
+    path: ["B5", "B10", "B15", "B22", "B16", "B23", "B27", "A28", "A30"],
     attackers: ["Salles", "Fgr1", "Www"], defenders: ["Oxy", "Leclerc", "Rumiko"], sub: "Beske",
     hold: "From min 20, D3 crosses to C24 using Transit Hubs",
-    timing: "Threaten A29 by min 25 · Temple at min 40",
+    timing: "Reach A30 by min 25 · Temple at min 40",
   },
   {
     n: 4, team: "A4+D4", color: "#4a90f2", name: "Right-Center Assault",
-    mission: "Secure our B29 and B31 — at min 40 you\u2019re first over the Temple bridge",
-    path: ["B9", "B14", "B21", "B25", "B29", "B31", "Temple"],
+    mission: "Secure our B29 and B31, then cross to take A30 and A29",
+    path: ["B9", "B14", "B21", "B25", "B29", "B30", "B31", "A30", "A29"],
     attackers: ["IK33", "Epson", "Mastergwyn"], defenders: ["Jungki Oppa", "RF", "Neduts"], sub: "Eyin",
     hold: "From min 20, D4 crosses to C29 using Transit Hubs",
-    timing: "Secure B29 by min 10 · hold B31 · cross to the Temple at min 40",
+    timing: "Secure B29 by min 10 · push A30 and A29 · Temple at min 40",
   },
   {
     n: 5, team: "A5+D5", color: "#a878f0", name: "Right Defense",
-    mission: "Protect our Garrison B24 and pressure C31 when it's safe",
-    path: ["B13", "B20", "B24", "B28", "B30", "C31"],
+    mission: "Protect our Garrison B24, then push north into C18 and C27",
+    path: ["B13", "B20", "B24", "B28", "B19", "C18", "C27"],
     attackers: ["Yam", "Hammelbock", "KZ"], defenders: ["Susu", "Bear", "Sadie"], sub: "Open slot",
     hold: "D5 stays on B24 the whole match · A5 covers B29",
-    timing: "Anchor B24 from the start · advance only when safe",
+    timing: "Anchor B24 from the start · cross at B19 only when safe",
     warning: "B24 can never be left alone",
   },
 ];
@@ -110,7 +110,8 @@ const Tag = ({ children, color }) => (
    Coordinates in the map's own 1920×1401 pixel space.
    ============================================================ */
 const N = {
-  B1: [125, 470], B3: [255, 450], B4: [185, 560], B5: [430, 235], B6: [340, 385],
+  B1: [125, 470], B2: [195, 340], B3: [255, 450], B4: [185, 560], B5: [430, 235], B6: [340, 385],
+  B7: [335, 505], B15: [480, 385], B19: [890, 195],
   B8: [300, 625], B9: [565, 138], B10: [400, 350], B11: [395, 580], B12: [410, 700],
   B13: [725, 150], B14: [540, 255], B16: [480, 505], B17: [497, 610], B18: [305, 795],
   B20: [812, 225], B21: [570, 318], B22: [545, 435], B23: [585, 575],
@@ -118,7 +119,7 @@ const N = {
   B30: [845, 410], B31: [770, 545],
   A13: [505, 1020], A19: [285, 990], A20: [587, 960], A24: [683, 890], A25: [870, 890],
   A28: [798, 815], A29: [973, 825], A30: [895, 765],
-  C24: [1235, 650], C29: [1155, 445], C31: [1068, 428],
+  C18: [1210, 195], C24: [1235, 650], C27: [1200, 300], C29: [1155, 445], C31: [1068, 428],
   Temple: [965, 570],
 };
 const TEMPLE = N.Temple;
