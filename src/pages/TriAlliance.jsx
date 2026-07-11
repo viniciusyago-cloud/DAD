@@ -81,14 +81,14 @@ const BUILDINGS = [
 ];
 
 const RULES = [
-  { i: "🎯", t: "Points win — kills don't", d: "Never chase kills. Every minute holding a building = points." },
-  { i: "⚡", t: "Save 30–40% energy for min 20", d: "Energy powers moving, attacking, healing. Empty at min 20 = useless." },
-  { i: "🔁", t: "Retreat, don't die", d: "About to lose? Fall back one building and heal. Respawning at HQ costs minutes." },
-  { i: "💊", t: "Heal inside captured buildings", d: "Only buildings that are NOT in combat can heal your troops." },
-  { i: "🚫", t: "No skipping", d: "You can't pass an enemy building — 5 allied marches engaging it open the way." },
-  { i: "🚉", t: "Transit Hubs = mobility", d: "Our fast travel. Capture early. Losing them cuts our Temple route." },
-  { i: "📣", t: "Short calls in chat", d: "Building code + minute — “B24 min 20” works in every language." },
-  { i: "⭐", t: "Follow your Lane Leader", d: "One leader per lane makes the calls. Don't improvise." },
+  { i: "/tri/icons/points.png", t: "Points win — kills don't", d: "Never chase kills. Every minute holding a building = points." },
+  { i: "/tri/icons/energy.png", t: "Save 30–40% energy for min 20", d: "Energy powers moving, attacking, healing. Empty at min 20 = useless." },
+  { i: "/tri/icons/retreat.png", t: "Retreat, don't die", d: "About to lose? Fall back one building and heal. Respawning at HQ costs minutes." },
+  { i: "/tri/icons/heal.png", t: "Heal inside captured buildings", d: "Only buildings that are NOT in combat can heal your troops." },
+  { i: "/tri/icons/block.png", t: "No skipping", d: "You can't pass an enemy building — 5 allied marches engaging it open the way." },
+  { i: "/tri/icons/transit.png", t: "Transit Hubs = mobility", d: "Our fast travel. Capture early. Losing them cuts our Temple route." },
+  { i: "/tri/icons/call.png", t: "Short calls in chat", d: "Building code + minute — “B24 min 20” works in every language." },
+  { i: "/tri/icons/lead.png", t: "Follow your Lane Leader", d: "One leader per lane makes the calls. Don't improvise." },
 ];
 
 const Tag = ({ children, color }) => (
@@ -157,27 +157,27 @@ function TeamCard({ r }) {
       </div>
       <div className="ta-cols">
         <div>
-          <div className="ta-col-h">⚔ A{r.n} · Attack</div>
+          <div className="ta-col-h"><img className="ti" src="/tri/icons/attack.png" alt="" />A{r.n} · Attack</div>
           {r.attackers.map((a, i) => (
             <div key={a} className="ta-member">
-              {i === 0 ? <span className="ta-lead-star">⭐</span> : <span className="ta-dot" style={{ background: r.color }}></span>}
+              {i === 0 ? <img className="ti lead" src="/tri/icons/lead.png" alt="Lane Leader" /> : <span className="ta-dot" style={{ background: r.color }}></span>}
               <span className="ta-member-name">{a}</span>
               {i === 0 && <span className="ta-lead-badge" style={{ color: r.color, boxShadow: `inset 0 0 0 1px ${r.color}66` }}>LEAD</span>}
             </div>
           ))}
         </div>
         <div>
-          <div className="ta-col-h">🛡 D{r.n} · Defense</div>
+          <div className="ta-col-h"><img className="ti" src="/tri/icons/defense.png" alt="" />D{r.n} · Defense</div>
           {r.defenders.map((d) => (
             <div key={d} className="ta-member"><span className="ta-dot" style={{ background: "#647787" }}></span><span className="ta-member-name">{d}</span></div>
           ))}
         </div>
       </div>
       <div className="ta-route-foot">
-        <span className="ta-hold-line" style={{ color: r.color }}>🛡 {r.hold}</span>
+        <span className="ta-hold-line" style={{ color: r.color }}><img className="ti" src="/tri/icons/defense.png" alt="" />{r.hold}</span>
         <span className="ta-timing">{r.timing}</span>
         <span className="ta-sub">Sub: {r.sub}</span>
-        {r.warning && <span className="ta-warn">⚠ {r.warning}</span>}
+        {r.warning && <span className="ta-warn">{r.warning}</span>}
       </div>
     </article>
   );
@@ -219,10 +219,13 @@ export default function TriAlliance() {
       <header className="banner ta-banner">
         <img src="/tri/header.jpg" alt="Temple of Tides at the center of the battlefield" />
         <div className="scrim"></div>
-        <div className="b-in">
-          <div className="eyebrow" style={{ color: "var(--gold)" }}>Alliance Command · Kingdom 1652</div>
-          <div className="ta-title metal">Tri-Alliance Clash</div>
-          <div className="ta-subtitle">Know your lane. Know your job. Win.</div>
+        <div className="b-in ta-bin">
+          <img className="ta-event-icon" src="/tri/icons/event.png" alt="" />
+          <div>
+            <div className="eyebrow" style={{ color: "var(--gold)" }}>Alliance Command · Kingdom 1652</div>
+            <div className="ta-title metal">Tri-Alliance Clash</div>
+            <div className="ta-subtitle">Know your lane. Know your job. Win.</div>
+          </div>
         </div>
       </header>
 
@@ -258,12 +261,12 @@ export default function TriAlliance() {
         </div>
         {found && !found.miss && (
           <div className="ta-found" style={{ boxShadow: `inset 0 0 0 1px ${found.team.color}88` }}>
-            <b style={{ color: found.team.color }}>{found.name}</b> — you're in <b style={{ color: found.team.color }}>{found.team.team}</b> · {found.role === "Attack" ? "⚔" : found.role === "Defense" ? "🛡" : "↺"} {found.role}{found.lead ? " · ⭐ LANE LEADER" : ""}
+            <b style={{ color: found.team.color }}>{found.name}</b> — you're in <b style={{ color: found.team.color }}>{found.team.team}</b> · {found.role !== "Substitute" && <img className="ti" src={found.role === "Attack" ? "/tri/icons/attack.png" : "/tri/icons/defense.png"} alt="" />}{found.role}{found.lead ? <span className="ta-found-lead"><img className="ti" src="/tri/icons/lead.png" alt="" />LANE LEADER</span> : null}
           </div>
         )}
         {found && found.miss && <div className="ta-found miss">Name not on the roster — talk to JoDee or Salles before the battle.</div>}
 
-        <p className="ta-p" style={{ margin: "10px 0" }}>Each lane = one <b>Attack team (A#)</b> that pushes forward + one <b>Defense team (D#)</b> that holds what was taken. The ⭐ first attacker is the <b>Lane Leader</b> — follow their calls.</p>
+        <p className="ta-p" style={{ margin: "10px 0" }}>Each lane = one <b>Attack team (A#)</b> that pushes forward + one <b>Defense team (D#)</b> that holds what was taken. The first attacker (<img className="ti" src="/tri/icons/lead.png" alt="" />) is the <b>Lane Leader</b> — follow their calls.</p>
 
         <div className="ta-map-legend">
           {TEAMS.map((r) => (
@@ -344,7 +347,7 @@ export default function TriAlliance() {
           </div>
           <p className="ta-p">Troops are <b>LOCKED</b>: every march carries 100k Infantry + 100k Cavalry + 100k Archery. You can't change it — your ONLY decision is which heroes go where. Strongest first.</p>
         </div>
-        <div className="ta-avoid">❌ Avoid: Diana (no battle skills) · blue-tier heroes</div>
+        <div className="ta-avoid"><img className="ta-avoid-img" src="/tri/icons/diana.png" alt="Diana" /><div><b>Avoid: Diana</b> — no battle skills here.<br />Also avoid blue-tier heroes.</div></div>
       </section>
 
       {/* Rules that decide the game */}
@@ -352,7 +355,7 @@ export default function TriAlliance() {
         <div className="lbl">Rules that decide the game</div>
         <div className="ta-rules">
           {RULES.map((r) => (
-            <div key={r.t} className="ta-rule"><span className="ta-rule-i">{r.i}</span><div><b>{r.t}</b><p>{r.d}</p></div></div>
+            <div key={r.t} className="ta-rule"><img className="ta-rule-i" src={r.i} alt="" /><div><b>{r.t}</b><p>{r.d}</p></div></div>
           ))}
         </div>
       </section>
@@ -361,8 +364,8 @@ export default function TriAlliance() {
       <section className="ta-card">
         <div className="lbl">Before the battle · switch your buffs on</div>
         <p className="ta-p" style={{ margin: 0 }}>
-          <b style={{ color: "var(--inf)" }}>✅ Works here:</b> Position · Pet · Territory · combat Town Buffs · Outpost<br />
-          <b style={{ color: "var(--arch)" }}>❌ Does nothing:</b> Deployment Capacity · March buffs · King's Perks · Ministry · Alliance Territory
+          <b style={{ color: "var(--inf)" }}>Works here:</b> Position · Pet · Territory · combat Town Buffs · Outpost<br />
+          <b style={{ color: "var(--arch)" }}>Does nothing:</b> Deployment Capacity · March buffs · King's Perks · Ministry · Alliance Territory
         </p>
       </section>
 

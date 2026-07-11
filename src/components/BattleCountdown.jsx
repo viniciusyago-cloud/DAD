@@ -26,7 +26,7 @@ export default function BattleCountdown({ target = BATTLE_START, durationMin = B
       </div>
     );
   } else if (now < end) {
-    body = <div className="cd-live">⚔ BATTLE IN PROGRESS</div>;
+    body = <div className="cd-live"><img src="/tri/icons/event.png" alt="" />BATTLE IN PROGRESS</div>;
   } else {
     body = <div className="cd-done">Battle completed — next cycle soon</div>;
   }
