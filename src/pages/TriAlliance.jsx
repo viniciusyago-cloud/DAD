@@ -13,7 +13,7 @@ const TEAMS = [
   {
     n: 1, team: "A1+D1", color: "#f0564e", name: "Deep Left Flank",
     mission: "Sweep the far-left lane and take enemy Garrison A24",
-    path: ["B1", "B4", "B8", "B12", "B18", "A19", "A24"],
+    path: ["B1", "B4", "B8", "B12", "B18", "A19", "A13", "A20", "A24"],
     attackers: ["JoDee", "Sabo", "Jenny"], defenders: ["Toady", "Imrail", "Moon"], sub: "Panda",
     hold: "From min 20, D1 holds A24 once captured",
     timing: "Reach A19 around min 15 · take A24 after min 20 · Temple at min 40",
@@ -21,26 +21,26 @@ const TEAMS = [
   {
     n: 2, team: "A2+D2", color: "#f2d054", name: "Left Corridor",
     mission: "Push the center-left lane down to A28 and A25",
-    path: ["B3", "B6", "B11", "B17", "B23", "A28", "A25"],
+    path: ["B3", "B6", "B11", "B17", "B23", "B27", "A28", "A25"],
     attackers: ["Johann", "Nanya", "Araz"], defenders: ["!!!Skill", "OVI", "Fong"], sub: "Juyopert",
     hold: "From min 20, D2 holds A25 / A26",
     timing: "Push from min 5 · engage A28 around min 15 · Temple at min 40",
   },
   {
     n: 3, team: "A3+D3", color: "#4ad0e0", name: "Central Push",
-    mission: "Drive the middle lane to A29 — it blocks their path to the Temple",
-    path: ["B5", "B10", "B16", "B22", "B27", "A29"],
+    mission: "Drive the middle lane, cross at A28 and take A29 — it blocks their path to the Temple",
+    path: ["B5", "B10", "B16", "B22", "B23", "B27", "A28", "A30", "A29"],
     attackers: ["Salles", "Fgr1", "Www"], defenders: ["Oxy", "Leclerc", "Rumiko"], sub: "Beske",
     hold: "From min 20, D3 crosses to C24 using Transit Hubs",
     timing: "Threaten A29 by min 25 · Temple at min 40",
   },
   {
     n: 4, team: "A4+D4", color: "#4a90f2", name: "Right-Center Assault",
-    mission: "Secure our B29 and B31, then push A30",
-    path: ["B9", "B14", "B21", "B25", "B29", "B31", "A30"],
+    mission: "Secure our B29 and B31 — at min 40 you\u2019re first over the Temple bridge",
+    path: ["B9", "B14", "B21", "B25", "B29", "B31", "Temple"],
     attackers: ["IK33", "Epson", "Mastergwyn"], defenders: ["Jungki Oppa", "RF", "Neduts"], sub: "Eyin",
     hold: "From min 20, D4 crosses to C29 using Transit Hubs",
-    timing: "Secure B29 by min 10 · pressure A30 · Temple at min 40",
+    timing: "Secure B29 by min 10 · hold B31 · cross to the Temple at min 40",
   },
   {
     n: 5, team: "A5+D5", color: "#a878f0", name: "Right Defense",
@@ -111,15 +111,17 @@ const Tag = ({ children, color }) => (
    ============================================================ */
 const N = {
   B1: [125, 470], B3: [255, 450], B4: [185, 560], B5: [430, 235], B6: [340, 385],
-  B8: [300, 625], B9: [575, 140], B10: [400, 350], B11: [395, 580], B12: [410, 700],
-  B13: [730, 145], B14: [550, 250], B16: [480, 500], B17: [495, 625], B18: [310, 820],
-  B20: [820, 210], B21: [590, 325], B22: [560, 450], B23: [575, 580],
-  B24: [750, 290], B25: [670, 380], B27: [605, 695], B28: [880, 305], B29: [765, 455],
-  B30: [835, 415], B31: [760, 550],
-  A19: [295, 990], A24: [690, 900], A25: [875, 895], A28: [795, 835], A29: [985, 835], A30: [895, 795],
-  C24: [1235, 650], C29: [1155, 445], C31: [1065, 420],
+  B8: [300, 625], B9: [565, 138], B10: [400, 350], B11: [395, 580], B12: [410, 700],
+  B13: [725, 150], B14: [540, 255], B16: [480, 505], B17: [497, 610], B18: [305, 795],
+  B20: [812, 225], B21: [570, 318], B22: [545, 435], B23: [585, 575],
+  B24: [750, 290], B25: [672, 365], B27: [620, 672], B28: [880, 325], B29: [775, 435],
+  B30: [845, 410], B31: [770, 545],
+  A13: [505, 1020], A19: [285, 990], A20: [587, 960], A24: [683, 890], A25: [870, 890],
+  A28: [798, 815], A29: [973, 825], A30: [895, 765],
+  C24: [1235, 650], C29: [1155, 445], C31: [1068, 428],
+  Temple: [965, 570],
 };
-const TEMPLE = [960, 545];
+const TEMPLE = N.Temple;
 const GARRISONS = ["A24", "B24", "C24"];
 const HOLD_PINS = [
   { at: "A24", c: "#f0564e", g: "D1" }, { at: "A25", c: "#f2d054", g: "D2" },
