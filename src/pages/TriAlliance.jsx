@@ -2,144 +2,107 @@ import React, { useState } from "react";
 import BattleCountdown from "../components/BattleCountdown.jsx";
 
 /* ============================================================
-   /tri-alliance — Ultimate Tri-Alliance Clash battle guide
-   Real game assets: full battlefield map (all building codes)
-   with our 5 routes drawn on top, real building images.
+   /tri-alliance — Ultimate Tri-Alliance Clash · battle guide
+   ONE goal: every member understands the event and THEIR job.
+   Official lane naming: A#+D# = Attack team # + Defense team #.
    ============================================================ */
 
 const ICON = { inf: "/troops/infantry.png", cav: "/troops/cavalry.png", arch: "/troops/archer.png" };
 
-/* Route colors match the alliance's hand-drawn map */
-const ROUTES = [
+const TEAMS = [
   {
-    n: 1, color: "#f0564e", name: "Deep Left Flank",
-    objective: "Push the far-left flank and pressure enemy Garrison A24 via A19",
+    n: 1, team: "A1+D1", color: "#f0564e", name: "Deep Left Flank",
+    mission: "Sweep the far-left lane and take enemy Garrison A24",
     path: ["B1", "B4", "B8", "B12", "B18", "A19", "A24"],
     attackers: ["JoDee", "Sabo", "Jenny"], defenders: ["Toady", "Imrail", "Moon"], sub: "Panda",
-    timing: "Advance in Phase 2 · reach A19 ~min 15 · pressure A24 in Phase 3",
+    hold: "From min 20: D1 holds A24 (enemy Garrison) once captured",
+    timing: "Advance in Phase 2 · reach A19 ~min 15 · take A24 after min 20 · min 40 → Temple",
   },
   {
-    n: 2, color: "#f2d054", name: "Left Attack Corridor",
-    objective: "Central-left lane toward A28 / A25",
+    n: 2, team: "A2+D2", color: "#f2d054", name: "Left Corridor",
+    mission: "Push the center-left lane down to A28 / A25",
     path: ["B3", "B6", "B11", "B17", "B23", "A28", "A25"],
     attackers: ["Johann", "Nanya", "Araz"], defenders: ["!!!Skill", "OVI", "Fong"], sub: "Juyopert",
-    timing: "Aggressive push from ~min 5 · engage A28 ~min 15",
+    hold: "From min 20: D2 holds A25 / A26 (southern corridor)",
+    timing: "Aggressive push from ~min 5 · engage A28 ~min 15 · min 40 → Temple",
   },
   {
-    n: 3, color: "#4ad0e0", name: "Central Push",
-    objective: "Central corridor to A29 (enemy Transit route — cutting it blocks their Temple access)",
+    n: 3, team: "A3+D3", color: "#4ad0e0", name: "Central Push",
+    mission: "Drive the central corridor toward A29 — cutting it blocks their Temple access",
     path: ["B5", "B10", "B16", "B22", "B27", "A29"],
     attackers: ["Salles", "Fgr1", "Www"], defenders: ["Oxy", "Leclerc", "Rumiko"], sub: "Beske",
-    timing: "Core lane · aim to threaten A29 by ~min 25",
+    hold: "From min 20: D3 crosses to C24 via Transit Hubs — pressure enemy Garrison C",
+    timing: "Core lane · threaten A29 by ~min 25 · min 40 → Temple",
   },
   {
-    n: 4, color: "#4a90f2", name: "Right-Center Assault",
-    objective: "Secure our B29 / B31 and pressure A30 → A29",
-    path: ["B9", "B14", "B21", "B29", "B31", "A30", "A29"],
+    n: 4, team: "A4+D4", color: "#4a90f2", name: "Right-Center Assault",
+    mission: "Secure our B29 / B31, then pressure A30 → A29",
+    path: ["B9", "B14", "B21", "B25", "B29", "B31", "A30"],
     attackers: ["IK33", "Epson", "Mastergwyn"], defenders: ["Jungki Oppa", "RF", "Neduts"], sub: "Eyin",
-    timing: "Secure B29 early (~min 10) · ready to converge on the Temple at min 40",
+    hold: "From min 20: D4 crosses to C29 via Transit Hubs — cut enemy C's Temple access",
+    timing: "Secure B29 ~min 10 · pressure A30 · min 40 → Temple",
   },
   {
-    n: 5, color: "#a878f0", name: "Right Defense + C Pressure",
-    objective: "DEFENSIVE — protect our Garrison B24; apply pressure toward C27 / C31 when safe",
-    path: ["B13", "B19", "B20", "B24", "B28", "C31"],
-    attackers: ["Yam", "Hammelbock", "KZ"], defenders: ["Susu", "Bear", "Sadie"], sub: "Open slot — to be filled",
-    timing: "Defenders anchor B24 immediately · Attackers push the right flank",
-    warning: "Defense priority: B24 is NEVER left unattended",
+    n: 5, team: "A5+D5", color: "#a878f0", name: "Right Defense + C Pressure",
+    mission: "DEFENSIVE — protect our Garrison B24, pressure C31 when safe",
+    path: ["B13", "B20", "B24", "B28", "B30", "C31"],
+    attackers: ["Yam", "Hammelbock", "KZ"], defenders: ["Susu", "Bear", "Sadie"], sub: "Open slot",
+    hold: "D5 NEVER leaves B24 (our Garrison) · A5 covers B29 — our Temple route",
+    timing: "Anchor B24 from min 0 · push the right flank only when safe",
+    warning: "B24 is NEVER left unattended",
   },
 ];
 
 const PHASES = [
   {
     n: 1, name: "Preparation", span: "0–3 min", color: "#90a2b6",
-    points: [
-      "Assign Building Captains ASAP (boosts alliance energy regen)",
-      "Confirm route assignments; pin them in alliance chat",
-      "No combat yet",
-      "Reminder: save 30–40% energy for min 20",
-    ],
+    points: ["Assign Building Captains (boosts energy regen)", "Get into your lane — no combat yet"],
   },
   {
     n: 2, name: "Seize & Conquer", span: "3–20 min", color: "#ecc25a",
-    points: [
-      "Priority: capture Transit Hubs (mobility for the whole match)",
-      "Take neutral buildings on our side; push into enemy side for early points",
-      "Garrisons are still SHIELDED — cannot be captured yet",
-      "Each route advances along its assigned path (see Battle Plan)",
-    ],
+    points: ["Capture Transit Hubs FIRST — they are our fast travel", "Advance along YOUR route, building by building", "Garrisons are still shielded — ignore them"],
   },
   {
     n: 3, name: "Garrison Occupation", span: "20–40 min", color: "#f2824a",
-    points: [
-      "Garrisons (A24 · B24 · C24) unlock → 1,800 pts/min each (3× a normal building)",
-      "Priority 1: hold OUR Garrison B24",
-      "Priority 2: capture enemy Garrisons",
-      "Defenders move to their HOLD positions (see Mid-game Hold Plan)",
-    ],
+    points: ["A24 · B24 · C24 unlock → 1,800 pts/min each", "Hold OUR B24 · capture theirs", "Defense teams anchor their hold buildings"],
   },
   {
     n: 4, name: "Temple Onslaught", span: "40–60 min", color: "#ffe08a",
-    points: [
-      "Temple of Tides opens in the center: first capture = +50,000 pts, then 1,800 pts/min while held",
-      "Attackers converge and hit the Temple TOGETHER (burst, not one-by-one)",
-      "Final Blow Rule: the alliance landing the last hit on the final guard takes the Temple",
-      "If another alliance captures first: retake — the Temple keeps generating points",
-    ],
+    points: ["Temple opens: first capture +50,000, then 1,800/min", "ALL attack teams hit it TOGETHER — the last hit takes it", "Lost it? Retake it — it keeps printing points"],
   },
 ];
 
 const BUILDINGS = [
-  { img: "/tri/temple.jpg", name: "Temple of Tides", codes: "Center of the map", pts: "+1,800/min", note: "Opens at min 40 · first capture +50,000 pts", hot: true },
-  { img: "/tri/garrison.jpg", name: "Garrison", codes: "A24 · B24 · C24", pts: "+1,800/min", note: "Shielded until min 20 · 3× a normal building" },
-  { img: "/tri/hq.jpg", name: "Alliance HQ", codes: "A1 · B1 · C1", pts: "+1,800/min", note: "Your spawn point — defeated squads respawn here" },
-  { img: "/tri/transit.jpg", name: "Transit Hub", codes: "Ring platforms", pts: "+60/min", note: "Fast travel across the map — Phase 2 priority" },
-  { img: "/tri/tower.jpg", name: "Watchtower", codes: "Lane buildings", pts: "+180–600/min", note: "Standard capture points along every route" },
-];
-
-const HOLDS = [
-  { g: "D1", b: "A24", role: "Hold enemy Garrison A after capture", color: "#f0564e" },
-  { g: "D2", b: "A25 / A26", role: "Hold the southern corridor", color: "#f2d054" },
-  { g: "D3", b: "C24", role: "Pressure/hold enemy Garrison C", color: "#4ad0e0" },
-  { g: "D4", b: "C29", role: "Cut enemy C's Temple access", color: "#4a90f2" },
-  { g: "D5", b: "B24", role: "Permanent defense of OUR Garrison", color: "#a878f0" },
-  { g: "A5", b: "B29", role: "Protect OUR Temple access route", color: "#a878f0" },
+  { img: "/tri/temple.jpg", name: "Temple of Tides", codes: "Center · opens min 40", pts: "+1,800/min", note: "First capture +50,000 pts — the game-winner", hot: true },
+  { img: "/tri/garrison.jpg", name: "Garrison", codes: "A24 · B24 · C24 · unlock min 20", pts: "+1,800/min", note: "Worth 3 normal buildings — hold ours, take theirs" },
+  { img: "/tri/transit.jpg", name: "Transit Hub", codes: "Ring platforms", pts: "+60/min", note: "Fast travel across the map — capture first, never lose" },
+  { img: "/tri/tower.jpg", name: "Watchtower", codes: "Lane buildings", pts: "+180–600/min", note: "The stepping stones of your route" },
+  { img: "/tri/hq.jpg", name: "Alliance HQ", codes: "A1 · B1 · C1", pts: "+1,800/min", note: "Defeated squads respawn here — dying wastes minutes" },
 ];
 
 const RULES = [
-  { i: "⚡", t: "Energy", d: "Powers movement, attack, retreat, heal, revive; Building Captains boost regen" },
-  { i: "🚫", t: "Skip Rule", d: "You can only skip past an enemy building if total squads there exceed 5" },
-  { i: "⚔", t: "5-March Rule", d: "5 allied marches engaging an enemy building open the way forward (each march fights ~50s)" },
-  { i: "🎯", t: "Final Blow Rule", d: "At the Temple, the last hit takes full control" },
-  { i: "📋", t: "Squad Queue", d: "Squads fight in arrival order; losers respawn at HQ" },
-  { i: "🔒", t: "Lock Rule", d: "You cannot leave the alliance during the battle" },
-  { i: "💊", t: "Conscription", d: "Heal troops only inside captured buildings NOT in combat" },
-  { i: "🎖", t: "3 Squads", d: "Every player fields 3 squads of 3 heroes" },
-];
-
-const DISCIPLINE = [
-  "Assign Captains in the first 60s (R4/R5 responsibility)",
-  "Do NOT chase kills — points win, kills don't",
-  "Protect Transit Hubs — losing them cuts the Temple route",
-  "Temple burst: attack together at min 40, never one-by-one",
-  "Retreat one building back to heal instead of dying (respawning at HQ wastes time and energy)",
-  "Pin route assignments and phase timings in alliance chat",
-  "Short universal calls: building codes (A24) and times (min 20) work in every language",
-  "Save pet/city/position buffs for this event",
-  "Keep 30–40% energy for min 20",
+  { i: "🎯", t: "Points win — kills don't", d: "Never chase kills. Every minute holding a building = points." },
+  { i: "⚡", t: "Save 30–40% energy for min 20", d: "Energy powers moving, attacking, healing. Empty at min 20 = useless." },
+  { i: "🔁", t: "Retreat, don't die", d: "About to lose? Fall back one building and heal. Respawning at HQ costs minutes." },
+  { i: "💊", t: "Heal inside captured buildings", d: "Only buildings that are NOT in combat can heal your troops." },
+  { i: "🚫", t: "No skipping", d: "You can't pass an enemy building — 5 allied marches engaging it open the way." },
+  { i: "🚉", t: "Transit Hubs = mobility", d: "Our fast travel. Capture early. Losing them cuts our Temple route." },
+  { i: "📣", t: "Short calls in chat", d: "Building code + minute — “B24 min 20” works in every language." },
+  { i: "⭐", t: "Follow your Lane Leader", d: "One leader per lane makes the calls. Don't improvise." },
 ];
 
 const Tag = ({ children, color }) => (
   <span className="ta-tag" style={color ? { color, boxShadow: `inset 0 0 0 1px ${color}55` } : undefined}>{children}</span>
 );
 
-/* ---- Real battlefield map with our 5 routes drawn on top ----
-   Coordinates are in the map's own 1920×1401 pixel space. */
+/* ---- Real battlefield map, our 5 lanes drawn on top (1920×1401 space) ---- */
 const MAP_NODES = {
   B1: [125, 470], B3: [255, 450], B4: [185, 560], B5: [430, 235], B6: [340, 385],
   B8: [300, 625], B9: [575, 140], B10: [400, 350], B11: [395, 580], B12: [410, 700],
   B13: [730, 145], B14: [550, 250], B16: [480, 500], B17: [495, 625], B18: [310, 820],
-  B19: [895, 190], B20: [820, 210], B21: [590, 325], B22: [560, 450], B23: [575, 580],
-  B24: [750, 290], B27: [605, 695], B28: [880, 305], B29: [765, 455], B31: [760, 550],
+  B20: [820, 210], B21: [590, 325], B22: [560, 450], B23: [575, 580],
+  B24: [750, 290], B25: [670, 380], B27: [605, 695], B28: [880, 305], B29: [765, 455],
+  B30: [835, 415], B31: [760, 550],
   A19: [295, 990], A24: [690, 900], A25: [875, 895], A28: [795, 835], A29: [985, 835], A30: [895, 795],
   C24: [1235, 650], C29: [1155, 445], C31: [1065, 420],
 };
@@ -148,55 +111,42 @@ const MAP_HOLDS = [
   { at: "C29", c: "#4a90f2" }, { at: "B24", c: "#a878f0" }, { at: "B29", c: "#a878f0" },
 ];
 
-function RealMap() {
-  const [active, setActive] = useState(null);
-  const dim = (n) => (active !== null && active !== n ? 0.12 : 1);
+function RealMap({ active }) {
+  const dim = (n) => (active !== null && active !== n ? 0.1 : 1);
   const star = (x, y, s = 26) =>
     `M${x},${y - s} l${s * 0.28},${s * 0.6} ${s * 0.66},${s * 0.08} -${s * 0.48},${s * 0.45} ${s * 0.12},${s * 0.65} -${s * 0.58},${s * 0.32} -${s * 0.58},-${s * 0.32} ${s * 0.12},-${s * 0.65} -${s * 0.48},-${s * 0.45} ${s * 0.66},-${s * 0.08} Z`;
   return (
-    <div>
-      <div className="ta-realmap-wrap">
-        <div className="ta-realmap">
-          <img src="/tri/map.jpg" alt="Tri-Alliance Clash battlefield map with all building codes" loading="lazy" />
-          <svg viewBox="0 0 1920 1401" preserveAspectRatio="none" aria-hidden="true">
-            {ROUTES.map((r) => (
-              <polyline key={r.n}
-                points={r.path.map((b) => MAP_NODES[b].join(",")).join(" ")}
-                fill="none" stroke={r.color} strokeWidth="11" strokeLinecap="round" strokeLinejoin="round"
-                strokeDasharray="3 24" opacity={dim(r.n)} style={{ transition: "opacity .2s" }} />
-            ))}
-            {ROUTES.map((r) => r.path.map((b) => (
-              <circle key={r.n + b} cx={MAP_NODES[b][0]} cy={MAP_NODES[b][1]} r="16"
-                fill="none" stroke={r.color} strokeWidth="6" opacity={dim(r.n)} style={{ transition: "opacity .2s" }} />
-            )))}
-            {MAP_HOLDS.map((h, i) => (
-              <path key={i} d={star(...MAP_NODES[h.at])} fill={h.c} stroke="#10151b" strokeWidth="3" />
-            ))}
-          </svg>
-        </div>
+    <div className="ta-realmap-wrap">
+      <div className="ta-realmap">
+        <img src="/tri/map.jpg" alt="Tri-Alliance Clash battlefield map with all building codes" loading="lazy" />
+        <svg viewBox="0 0 1920 1401" preserveAspectRatio="none" aria-hidden="true">
+          {TEAMS.map((r) => (
+            <polyline key={r.n}
+              points={r.path.map((b) => MAP_NODES[b].join(",")).join(" ")}
+              fill="none" stroke={r.color} strokeWidth="11" strokeLinecap="round" strokeLinejoin="round"
+              strokeDasharray="3 24" opacity={dim(r.n)} style={{ transition: "opacity .2s" }} />
+          ))}
+          {TEAMS.map((r) => r.path.map((b) => (
+            <circle key={r.n + b} cx={MAP_NODES[b][0]} cy={MAP_NODES[b][1]} r="16"
+              fill="none" stroke={r.color} strokeWidth="6" opacity={dim(r.n)} style={{ transition: "opacity .2s" }} />
+          )))}
+          {MAP_HOLDS.map((h, i) => (
+            <path key={i} d={star(...MAP_NODES[h.at])} fill={h.c} stroke="#10151b" strokeWidth="3" />
+          ))}
+        </svg>
       </div>
-      <div className="ta-map-legend">
-        {ROUTES.map((r) => (
-          <button key={r.n} className={`ta-leg${active === r.n ? " on" : ""}`}
-            style={{ color: r.color, boxShadow: `inset 0 0 0 1px ${r.color}${active === r.n ? "" : "55"}` }}
-            onClick={() => setActive(active === r.n ? null : r.n)}>
-            <i style={{ background: r.color }}></i>R{r.n}
-          </button>
-        ))}
-      </div>
-      <div className="ta-note">Real battle map — every building code is on it. Scroll the map sideways · tap a route to highlight it · ★ = hold positions.</div>
     </div>
   );
 }
 
-function RouteCard({ r }) {
+function TeamCard({ r }) {
   return (
     <article className="ta-route" style={{ boxShadow: `0 0 0 1px ${r.color}66, inset 0 1px 0 #ffffff0a, 0 3px 10px #00000055` }}>
       <div className="ta-route-head">
-        <span className="ta-route-n" style={{ background: r.color }}>R{r.n}</span>
+        <span className="ta-route-n" style={{ background: r.color }}>{r.team}</span>
         <span className="ta-route-name">{r.name}</span>
       </div>
-      <div className="ta-route-obj">{r.objective}</div>
+      <div className="ta-route-obj">{r.mission}</div>
       <div className="ta-path">
         {r.path.map((b, i) => (
           <React.Fragment key={i}>
@@ -207,7 +157,7 @@ function RouteCard({ r }) {
       </div>
       <div className="ta-cols">
         <div>
-          <div className="ta-col-h">⚔ Attackers</div>
+          <div className="ta-col-h">⚔ A{r.n} · Attack</div>
           {r.attackers.map((a, i) => (
             <div key={a} className="ta-member">
               {i === 0 ? <span className="ta-lead-star">⭐</span> : <span className="ta-dot" style={{ background: r.color }}></span>}
@@ -217,15 +167,16 @@ function RouteCard({ r }) {
           ))}
         </div>
         <div>
-          <div className="ta-col-h">🛡 Defenders</div>
+          <div className="ta-col-h">🛡 D{r.n} · Defense</div>
           {r.defenders.map((d) => (
             <div key={d} className="ta-member"><span className="ta-dot" style={{ background: "#647787" }}></span><span className="ta-member-name">{d}</span></div>
           ))}
         </div>
       </div>
       <div className="ta-route-foot">
-        <span className="ta-sub">Sub: {r.sub}</span>
+        <span className="ta-hold-line" style={{ color: r.color }}>🛡 {r.hold}</span>
         <span className="ta-timing">{r.timing}</span>
+        <span className="ta-sub">Sub: {r.sub}</span>
         {r.warning && <span className="ta-warn">⚠ {r.warning}</span>}
       </div>
     </article>
@@ -233,61 +184,115 @@ function RouteCard({ r }) {
 }
 
 export default function TriAlliance() {
+  const [active, setActive] = useState(null);
+  const [query, setQuery] = useState("");
+  const [found, setFound] = useState(null);
+
+  const search = (q) => {
+    setQuery(q);
+    const s = q.trim().toLowerCase();
+    if (s.length < 2) { setFound(null); if (s.length === 0) setActive(null); return; }
+    for (const t of TEAMS) {
+      for (const [list, role] of [[t.attackers, "Attack"], [t.defenders, "Defense"]]) {
+        const hit = list.find((n) => n.toLowerCase().includes(s));
+        if (hit) {
+          const lead = role === "Attack" && t.attackers[0] === hit;
+          setFound({ name: hit, team: t, role, lead });
+          setActive(t.n);
+          return;
+        }
+      }
+      if (t.sub.toLowerCase().includes(s) && t.sub !== "Open slot") {
+        setFound({ name: t.sub, team: t, role: "Substitute", lead: false });
+        setActive(t.n);
+        return;
+      }
+    }
+    setFound({ miss: true });
+  };
+
+  const shown = active !== null ? TEAMS.filter((t) => t.n === active) : TEAMS;
+
   return (
     <div className="app ta">
-      {/* 1 · Header — real battlefield backdrop */}
+      {/* Header */}
       <header className="banner ta-banner">
         <img src="/tri/header.jpg" alt="Temple of Tides at the center of the battlefield" />
         <div className="scrim"></div>
         <div className="b-in">
           <div className="eyebrow" style={{ color: "var(--gold)" }}>Alliance Command · Kingdom 1652</div>
-          <div className="ta-title metal">Ultimate Tri-Alliance Clash</div>
-          <div className="ta-subtitle">Complete battle plan · 60-minute war for map control</div>
+          <div className="ta-title metal">Tri-Alliance Clash</div>
+          <div className="ta-subtitle">Know your lane. Know your job. Win.</div>
         </div>
       </header>
 
-      {/* 2 · Countdown */}
+      {/* Countdown — battle is TODAY */}
       <BattleCountdown />
 
-      {/* 3 · Highlight stats */}
-      <div className="ta-stats">
-        <div className="ta-stat"><b className="metal">60</b><span>min battle</span></div>
-        <div className="ta-stat"><b className="metal">50,000</b><span>Temple first-capture bonus</span></div>
-        <div className="ta-stat"><b className="metal">1,800</b><span>pts/min per Garrison/Temple</span></div>
-      </div>
-
-      {/* 4 · Event overview + real registration screen */}
+      {/* How we win — the whole event in 3 steps */}
       <section className="ta-card">
-        <div className="lbl">Event overview</div>
-        <img className="ta-regmap" src="/tri/regmap.jpg" alt="In-game registration: Earth Guard, Storm Guard and Tidal Guard bases on the triangular battlefield" loading="lazy" />
-        <div className="ta-kv"><span>Format</span><b>3 alliances battle for map control</b></div>
-        <div className="ta-kv"><span>Duration</span><b>60 minutes (4 phases)</b></div>
-        <div className="ta-kv"><span>Frequency</span><b>Monthly (4-week cycle)</b></div>
-        <div className="ta-kv"><span>Battle day</span><b>Saturday · slots (UTC): 02:00 / 12:00 / 14:00 / 19:00 / 21:00</b></div>
-        <div className="ta-kv"><span>Victory</span><b>Most points when the timer ends</b></div>
-        <div className="ta-kv"><span>Squads</span><b>Each player fields 3 squads of 3 heroes</b></div>
+        <div className="lbl">How we win · the whole event in 3 steps</div>
+        <div className="ta-steps">
+          <div className="ta-step">
+            <span className="ta-step-n metal">1</span>
+            <div><b>Hold buildings — they print points</b><p>Every building generates points per minute while we hold it. Most points after 60 minutes wins. Kills mean nothing.</p></div>
+          </div>
+          <div className="ta-step">
+            <span className="ta-step-n metal">2</span>
+            <div><b>Stay in YOUR lane with your team</b><p>5 lanes, 6 players each. Your team advances along its route, building by building. Find yours below.</p></div>
+          </div>
+          <div className="ta-step">
+            <span className="ta-step-n metal">3</span>
+            <div><b>Min 40 — everyone hits the Temple</b><p>First capture is +50,000 points. All attack teams converge and hit it TOGETHER.</p></div>
+          </div>
+        </div>
+        <div className="ta-callout">We lost round 1 because we scattered. Round 2: everyone knows their job.</div>
       </section>
 
-      {/* 5 · Key buildings — real in-game art */}
+      {/* Find your position — THE interactive core */}
       <section className="ta-card">
-        <div className="lbl">Key buildings · know what you're capturing</div>
-        <div className="ta-blds">
-          {BUILDINGS.map((b) => (
-            <div key={b.name} className={`ta-bld${b.hot ? " hot" : ""}`}>
-              <img src={b.img} alt={b.name} loading="lazy" />
-              <div className="ta-bld-body">
-                <div className="ta-bld-top"><b>{b.name}</b><span className="ta-bld-pts">{b.pts}</span></div>
-                <div className="ta-bld-codes">{b.codes}</div>
-                <div className="ta-bld-note">{b.note}</div>
-              </div>
-            </div>
+        <div className="lbl">Find your position</div>
+        <div className="ta-search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          <input placeholder="Type your name…" value={query} onChange={(e) => search(e.target.value)} />
+        </div>
+        {found && !found.miss && (
+          <div className="ta-found" style={{ boxShadow: `inset 0 0 0 1px ${found.team.color}88` }}>
+            <b style={{ color: found.team.color }}>{found.name}</b> — you're in <b style={{ color: found.team.color }}>{found.team.team}</b> · {found.role === "Attack" ? "⚔" : found.role === "Defense" ? "🛡" : "↺"} {found.role}{found.lead ? " · ⭐ LANE LEADER" : ""}
+          </div>
+        )}
+        {found && found.miss && <div className="ta-found miss">Name not on the roster — talk to JoDee or Salles before the battle.</div>}
+
+        <p className="ta-p" style={{ margin: "10px 0" }}>Each lane = one <b>Attack team (A#)</b> that pushes forward + one <b>Defense team (D#)</b> that holds what was taken. The ⭐ first attacker is the <b>Lane Leader</b> — follow their calls.</p>
+
+        <div className="ta-map-legend">
+          {TEAMS.map((r) => (
+            <button key={r.n} className={`ta-leg${active === r.n ? " on" : ""}`}
+              style={{ color: r.color, boxShadow: `inset 0 0 0 1px ${r.color}${active === r.n ? "" : "55"}` }}
+              onClick={() => { setActive(active === r.n ? null : r.n); setFound(null); setQuery(""); }}>
+              <i style={{ background: r.color }}></i>{r.team}
+            </button>
           ))}
         </div>
+
+        <RealMap active={active} />
+        <div className="ta-note">Real battle map — scroll it sideways. Tap your team above to light up your lane · ★ = defense hold positions.</div>
       </section>
 
-      {/* 6 · Phase timeline */}
+      {/* Team cards (filtered by selection) */}
+      <section className="ta-plan">
+        <div className="eyebrow" style={{ color: "var(--gold)" }}>
+          {active !== null ? `Your lane · ${TEAMS[active - 1].team}` : "The 5 lanes · 30 players"}
+        </div>
+        {active !== null && (
+          <button className="ta-showall" onClick={() => { setActive(null); setFound(null); setQuery(""); }}>← Show all 5 lanes</button>
+        )}
+        {shown.map((r) => <TeamCard key={r.n} r={r} />)}
+      </section>
+
+      {/* The 60 minutes */}
       <section className="ta-card">
-        <div className="lbl">Battle timeline · 4 phases</div>
+        <div className="lbl">The 60 minutes · 4 phases</div>
         <div className="ta-tl">
           {PHASES.map((p) => (
             <div key={p.n} className="ta-tl-seg" style={{ background: p.color, flexGrow: [3, 17, 20, 20][p.n - 1] }}></div>
@@ -308,82 +313,43 @@ export default function TriAlliance() {
         </div>
       </section>
 
-      {/* 7 · Real battlefield map with our routes */}
+      {/* What the buildings are worth */}
       <section className="ta-card">
-        <div className="lbl">Battlefield map · our 5 routes</div>
-        <RealMap />
-      </section>
-
-      {/* 8 · Battle plan — 5 routes */}
-      <section className="ta-plan">
-        <div className="eyebrow" style={{ color: "var(--gold)" }}>DAD Battle Plan · 5 routes × 6 players</div>
-        <div className="ta-plan-stats">30 players · 3 Attackers + 3 Defenders per route · 5 Lane Leaders · main offensive focus: side A</div>
-        {ROUTES.map((r) => <RouteCard key={r.n} r={r} />)}
-      </section>
-
-      {/* 9 · Mid-game hold plan */}
-      <section className="ta-card">
-        <div className="eyebrow" style={{ color: "var(--gold)" }}>Mid-game Hold Plan · from ~min 15–20</div>
-        <p className="ta-p">Once the initial advance is done and Garrisons open (min 20), Defender groups anchor the priority buildings closest to their position. Attackers stay mobile for pressure and the Temple push.</p>
-        <div className="ta-holds">
-          {HOLDS.map((h) => (
-            <div key={h.g + h.b} className="ta-hold">
-              <span className="ta-hold-g" style={{ color: h.color, boxShadow: `inset 0 0 0 1px ${h.color}66` }}>{h.g}</span>
-              <Tag>{h.b}</Tag>
-              <span className="ta-hold-role">{h.role}</span>
+        <div className="lbl">Know what you're capturing</div>
+        <div className="ta-blds">
+          {BUILDINGS.map((b) => (
+            <div key={b.name} className={`ta-bld${b.hot ? " hot" : ""}`}>
+              <img src={b.img} alt={b.name} loading="lazy" />
+              <div className="ta-bld-body">
+                <div className="ta-bld-top"><b>{b.name}</b><span className="ta-bld-pts">{b.pts}</span></div>
+                <div className="ta-bld-codes">{b.codes}</div>
+                <div className="ta-bld-note">{b.note}</div>
+              </div>
             </div>
           ))}
         </div>
-        <div className="ta-note">Groups crossing the map (D3, D4) should use Transit Hubs for mobility.</div>
-        <div className="ta-note">A1–A4 (12 attackers) remain mobile: keep pressure, then converge on the Temple at min 40.</div>
       </section>
 
-      {/* 10 · Roles + Lane Leaders */}
-      <div className="ta-2col">
-        <section className="ta-card">
-          <div className="ta-role-h">⚔ Attacker</div>
-          <div className="ta-role-sub">3 per route · 15 total</div>
-          <p className="ta-p">Captures keypoints, pushes enemy territory, keeps frontline pressure, rotates out to heal; strongest heroes in Squad 1. The FIRST attacker of each route is the Lane Leader.</p>
-        </section>
-        <section className="ta-card">
-          <div className="ta-role-h">🛡 Defender</div>
-          <div className="ta-role-sub">3 per route · 15 total</div>
-          <p className="ta-p">Holds the building behind the attackers, steps in during heal rotations, prevents breakthroughs, anchors the mid-game hold positions.</p>
-        </section>
-      </div>
+      {/* Your 3 marches */}
       <section className="ta-card">
-        <div className="lbl">⭐ Lane Leaders — one per route</div>
-        <div className="ta-leads">
-          {ROUTES.map((r) => (
-            <span key={r.n} className="ta-leadchip" style={{ color: r.color, boxShadow: `inset 0 0 0 1px ${r.color}66` }}>
-              {r.attackers[0]} <small>R{r.n}</small>
-            </span>
-          ))}
-        </div>
-        <p className="ta-p">Coordinate the route in real time and make the tactical calls for their 5 teammates.</p>
-      </section>
-
-      {/* 11 · Heroes & squads */}
-      <section className="ta-card">
-        <div className="eyebrow" style={{ color: "var(--gold)" }}>Hero setup · 3 squads × 3 heroes · 300k troops each (fixed)</div>
+        <div className="lbl">Your 3 marches · heroes</div>
         <div className="ta-squads">
-          <div className="ta-squad s1"><b>Squad 1</b><span>Strongest trio — faces the hardest fights first</span></div>
-          <div className="ta-squad"><b>Squad 2</b><span>Mid strength</span></div>
-          <div className="ta-squad"><b>Squad 3</b><span>Support</span></div>
+          <div className="ta-squad s1"><b>March 1</b><span>Your 3 STRONGEST heroes — it fights first and most</span></div>
+          <div className="ta-squad"><b>March 2</b><span>The 3 strongest that are left</span></div>
+          <div className="ta-squad"><b>March 3</b><span>The rest</span></div>
         </div>
-        <div className="ta-kv"><span>Squad 1 combos</span><b>Amadeus + Jabel + Saul &nbsp;·&nbsp; Amadeus + Hilde + Marlin</b></div>
         <div className="ta-locked">
           <div className="ta-locked-icons">
             <img src={ICON.inf} alt="Infantry" /><img src={ICON.cav} alt="Cavalry" /><img src={ICON.arch} alt="Archery" />
           </div>
-          <p className="ta-p">Unlike other events, troop composition is <b>LOCKED</b>: 100k Apex Infantry + 100k Apex Cavalry + 100k Apex Archery per squad. You cannot change the ratio — your only choice is which heroes go where. Put your <b>STRONGEST</b> heroes in Squad 1.</p>
+          <p className="ta-p">Troops are <b>LOCKED</b>: every march carries 100k Infantry + 100k Cavalry + 100k Archery. You can't change it — your ONLY decision is which heroes go where. Strongest first.</p>
         </div>
-        <div className="ta-avoid">❌ Avoid: Diana (no battle skills) · Blue-tier heroes (underperform here)</div>
+        <div className="ta-avoid">❌ Avoid: Diana (no battle skills) · blue-tier heroes</div>
       </section>
 
-      {/* 12 · Essential rules */}
+      {/* Rules that decide the game */}
       <section className="ta-card">
-        <div className="lbl">Essential rules</div>
+        <div className="lbl">Rules that decide the game</div>
         <div className="ta-rules">
           {RULES.map((r) => (
             <div key={r.t} className="ta-rule"><span className="ta-rule-i">{r.i}</span><div><b>{r.t}</b><p>{r.d}</p></div></div>
@@ -391,56 +357,16 @@ export default function TriAlliance() {
         </div>
       </section>
 
-      {/* 13 · Tactical discipline */}
+      {/* Before the battle */}
       <section className="ta-card">
-        <div className="lbl">Tactical discipline</div>
-        <ul className="ta-ul">{DISCIPLINE.map((d) => <li key={d}>{d}</li>)}</ul>
+        <div className="lbl">Before the battle · switch your buffs on</div>
+        <p className="ta-p" style={{ margin: 0 }}>
+          <b style={{ color: "var(--inf)" }}>✅ Works here:</b> Position · Pet · Territory · combat Town Buffs · Outpost<br />
+          <b style={{ color: "var(--arch)" }}>❌ Does nothing:</b> Deployment Capacity · March buffs · King's Perks · Ministry · Alliance Territory
+        </p>
       </section>
 
-      {/* 14 · Buffs */}
-      <div className="ta-2col">
-        <section className="ta-card">
-          <div className="ta-buff-h ok">✅ Effective</div>
-          <ul className="ta-ul">
-            <li>Position</li><li>Pet</li><li>Territory</li><li>Combat Town Buffs</li><li>Outpost</li>
-          </ul>
-        </section>
-        <section className="ta-card">
-          <div className="ta-buff-h no">❌ No effect</div>
-          <ul className="ta-ul">
-            <li>Deployment Capacity</li><li>March buffs</li><li>King's Perks</li><li>Ministry positions</li><li>Alliance Territory bonuses</li>
-          </ul>
-        </section>
-      </div>
-
-      {/* 15 · Eligibility */}
-      <section className="ta-card">
-        <div className="lbl">Eligibility</div>
-        <div className="ta-kv"><span>Alliance</span><b>Top 20 kingdom power · Lv 6+ and 40+ actives for a 2nd legion · min 15 per legion</b></div>
-        <div className="ta-kv"><span>Player</span><b>Town Center 16+ · not inactive 5+ days · registered Wed–Thu · substitutes count in matchmaking</b></div>
-      </section>
-
-      {/* 16 · Weekly schedule */}
-      <section className="ta-card">
-        <div className="lbl">Weekly schedule</div>
-        <div className="ta-week">
-          <span>🗳 Mon–Tue<br /><b>Voting</b></span><i>→</i>
-          <span>📝 Wed–Thu<br /><b>Registration</b></span><i>→</i>
-          <span>🎲 Fri<br /><b>Matchmaking</b></span><i>→</i>
-          <span className="hot">⚔ Sat<br /><b>Battle (60 min)</b></span>
-        </div>
-      </section>
-
-      {/* 17 · Rewards */}
-      <section className="ta-card">
-        <div className="lbl">Rewards</div>
-        <div className="ta-kv"><span>Alliance</span><b>Ranking rewards (Legion 1's placement) — Tidal Stone Coins, gems, resources</b></div>
-        <div className="ta-kv"><span>Personal</span><b>Ranking + merit rewards (need 10,000 Merit Points to qualify) — avatar frames, hero fragments, speedups</b></div>
-        <div className="ta-kv"><span>Event store</span><b>Tidal Stone Coins · items refresh every 2 weeks</b></div>
-      </section>
-
-      {/* 18 · Footer */}
-      <div className="foot">Battle plan v2 · Confirm your route with your Lane Leader before Saturday · Check the pinned messages</div>
+      <div className="foot">Battle plan v3 · Confirm your lane with your Lane Leader · Check the pinned messages</div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 /* Live countdown to the battle. Swap the target date here for the next cycle. */
-export const BATTLE_START = "2026-07-12T14:00:00Z";
+export const BATTLE_START = "2026-07-11T14:00:00Z";
 export const BATTLE_MINUTES = 60;
 
 const pad = (n) => String(n).padStart(2, "0");
@@ -35,7 +35,7 @@ export default function BattleCountdown({ target = BATTLE_START, durationMin = B
     <section className="cd">
       <div className="lbl">Next battle starts in</div>
       {body}
-      <div className="cd-ctx">Saturday, July 12 · 14:00 UTC · 11:00 São Paulo · 15:00 London · 23:00 Tokyo</div>
+      <div className="cd-ctx">TODAY · Saturday, July 11 · 14:00 UTC · 11:00 São Paulo · 15:00 London · 23:00 Tokyo</div>
     </section>
   );
 }
