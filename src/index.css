@@ -303,3 +303,29 @@ button, input, select { font-family: inherit; }
 .ta-week span.hot { box-shadow: inset 0 0 0 1px var(--gold-dk); }
 .ta-week span.hot b { color: var(--gold-lt); }
 .ta-week i { align-self: center; font-style: normal; font-size: 10px; color: var(--ink-mute); }
+
+/* ---------- Tri-Alliance: real game assets ---------- */
+.ta-banner { height: 168px; }
+.ta-banner img { object-position: center 40%; }
+.ta-banner .ta-title { font-size: 25px; margin: 3px 0 4px; }
+.ta-banner .ta-subtitle { text-shadow: 0 1px 4px #000; }
+
+.ta-regmap { width: 100%; border-radius: 10px; margin-bottom: 11px; box-shadow: 0 0 0 1px var(--edge); display: block; }
+
+.ta-blds { display: flex; flex-direction: column; gap: 8px; }
+.ta-bld { display: flex; gap: 12px; align-items: center; padding: 9px 10px; border-radius: 11px; background: var(--well); box-shadow: inset 0 0 0 1px var(--edge); }
+.ta-bld.hot { box-shadow: inset 0 0 0 1px var(--gold-dk); }
+.ta-bld img { width: 74px; height: 62px; object-fit: cover; border-radius: 8px; flex-shrink: 0; box-shadow: 0 0 0 1px var(--edge); }
+.ta-bld.hot img { box-shadow: 0 0 0 1px var(--gold-dk); }
+.ta-bld-body { flex: 1; min-width: 0; }
+.ta-bld-top { display: flex; align-items: baseline; gap: 8px; }
+.ta-bld-top b { font-size: 13.5px; color: var(--ink); }
+.ta-bld-pts { margin-left: auto; flex-shrink: 0; font-size: 11px; font-weight: 800; color: var(--gold-lt); font-variant-numeric: tabular-nums; }
+.ta-bld-codes { font-size: 10.5px; font-weight: 700; color: var(--gold); margin-top: 2px; letter-spacing: 0.03em; }
+.ta-bld-note { font-size: 10.5px; color: var(--ink-mute); margin-top: 3px; line-height: 1.45; }
+
+.ta-realmap-wrap { overflow-x: auto; border-radius: 11px; box-shadow: 0 0 0 1px var(--edge); -webkit-overflow-scrolling: touch; background: #c8a882; }
+.ta-realmap { position: relative; width: 190%; }
+.ta-realmap img { display: block; width: 100%; height: auto; }
+.ta-realmap svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+@media (min-width: 700px) { .ta-realmap { width: 130%; } }

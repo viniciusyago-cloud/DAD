@@ -3,7 +3,8 @@ import BattleCountdown from "../components/BattleCountdown.jsx";
 
 /* ============================================================
    /tri-alliance — Ultimate Tri-Alliance Clash battle guide
-   Static content page (no Supabase). English (intl alliance).
+   Real game assets: full battlefield map (all building codes)
+   with our 5 routes drawn on top, real building images.
    ============================================================ */
 
 const ICON = { inf: "/troops/infantry.png", cav: "/troops/cavalry.png", arch: "/troops/archer.png" };
@@ -87,6 +88,14 @@ const PHASES = [
   },
 ];
 
+const BUILDINGS = [
+  { img: "/tri/temple.jpg", name: "Temple of Tides", codes: "Center of the map", pts: "+1,800/min", note: "Opens at min 40 · first capture +50,000 pts", hot: true },
+  { img: "/tri/garrison.jpg", name: "Garrison", codes: "A24 · B24 · C24", pts: "+1,800/min", note: "Shielded until min 20 · 3× a normal building" },
+  { img: "/tri/hq.jpg", name: "Alliance HQ", codes: "A1 · B1 · C1", pts: "+1,800/min", note: "Your spawn point — defeated squads respawn here" },
+  { img: "/tri/transit.jpg", name: "Transit Hub", codes: "Ring platforms", pts: "+60/min", note: "Fast travel across the map — Phase 2 priority" },
+  { img: "/tri/tower.jpg", name: "Watchtower", codes: "Lane buildings", pts: "+180–600/min", note: "Standard capture points along every route" },
+];
+
 const HOLDS = [
   { g: "D1", b: "A24", role: "Hold enemy Garrison A after capture", color: "#f0564e" },
   { g: "D2", b: "A25 / A26", role: "Hold the southern corridor", color: "#f2d054" },
@@ -123,67 +132,49 @@ const Tag = ({ children, color }) => (
   <span className="ta-tag" style={color ? { color, boxShadow: `inset 0 0 0 1px ${color}55` } : undefined}>{children}</span>
 );
 
-function BattleMap() {
+/* ---- Real battlefield map with our 5 routes drawn on top ----
+   Coordinates are in the map's own 1920×1401 pixel space. */
+const MAP_NODES = {
+  B1: [125, 470], B3: [255, 450], B4: [185, 560], B5: [430, 235], B6: [340, 385],
+  B8: [300, 625], B9: [575, 140], B10: [400, 350], B11: [395, 580], B12: [410, 700],
+  B13: [730, 145], B14: [550, 250], B16: [480, 500], B17: [495, 625], B18: [310, 820],
+  B19: [895, 190], B20: [820, 210], B21: [590, 325], B22: [560, 450], B23: [575, 580],
+  B24: [750, 290], B27: [605, 695], B28: [880, 305], B29: [765, 455], B31: [760, 550],
+  A19: [295, 990], A24: [690, 900], A25: [875, 895], A28: [795, 835], A29: [985, 835], A30: [895, 795],
+  C24: [1235, 650], C29: [1155, 445], C31: [1065, 420],
+};
+const MAP_HOLDS = [
+  { at: "A24", c: "#f0564e" }, { at: "A25", c: "#f2d054" }, { at: "C24", c: "#4ad0e0" },
+  { at: "C29", c: "#4a90f2" }, { at: "B24", c: "#a878f0" }, { at: "B29", c: "#a878f0" },
+];
+
+function RealMap() {
   const [active, setActive] = useState(null);
-  const dim = (n) => (active !== null && active !== n ? 0.14 : 1);
-
-  /* schematic node positions (viewBox 0 0 360 320) */
-  const N = {
-    B1: [35, 45], B24: [150, 90], B29: [205, 78],
-    A19: [60, 232], A24: [95, 266], A25: [152, 252], A28: [130, 214], A29: [187, 236], A30: [232, 214],
-    C24: [300, 142], C27: [286, 88], C29: [263, 172], C31: [316, 202],
-  };
-  const paths = {
-    1: [[35, 55], [42, 120], [50, 180], N.A19, N.A24],
-    2: [[55, 50], [90, 120], [113, 172], N.A28, N.A25],
-    3: [[75, 45], [120, 102], [155, 172], N.A29],
-    4: [[100, 40], [162, 62], N.B29, [228, 140], N.A30, N.A29],
-    5: [[120, 35], N.B24, [225, 100], [275, 148], N.C31],
-  };
-  const holds = [
-    { at: N.A24, c: "#f0564e" }, { at: N.A25, c: "#f2d054" }, { at: N.C24, c: "#4ad0e0" },
-    { at: N.C29, c: "#4a90f2" }, { at: N.B24, c: "#a878f0" }, { at: N.B29, c: "#a878f0" },
-  ];
-  const star = (x, y) => `M${x},${y - 7} l1.9,4 4.4,.5 -3.2,3 .8,4.3 -3.9,-2.1 -3.9,2.1 .8,-4.3 -3.2,-3 4.4,-.5 Z`;
-
+  const dim = (n) => (active !== null && active !== n ? 0.12 : 1);
+  const star = (x, y, s = 26) =>
+    `M${x},${y - s} l${s * 0.28},${s * 0.6} ${s * 0.66},${s * 0.08} -${s * 0.48},${s * 0.45} ${s * 0.12},${s * 0.65} -${s * 0.58},${s * 0.32} -${s * 0.58},-${s * 0.32} ${s * 0.12},-${s * 0.65} -${s * 0.48},-${s * 0.45} ${s * 0.66},-${s * 0.08} Z`;
   return (
     <div>
-      <svg className="ta-map" viewBox="0 0 360 320" role="img" aria-label="Schematic battlefield map: zone B northwest (us), zone A south, zone C east, Temple in the center, five colored routes">
-        <rect x="1" y="1" width="358" height="318" rx="12" fill="#0a0e13" stroke="#2c3a49" />
-        {/* zone tints */}
-        <ellipse cx="80" cy="70" rx="105" ry="80" fill="#ecc25a" opacity="0.05" />
-        <ellipse cx="170" cy="272" rx="150" ry="62" fill="#f0564e" opacity="0.05" />
-        <ellipse cx="312" cy="140" rx="72" ry="95" fill="#4ad0e0" opacity="0.05" />
-        <text x="26" y="26" className="ta-zone" fill="#ecc25a">B · US</text>
-        <text x="150" y="308" className="ta-zone" fill="#f0564e">A · ENEMY</text>
-        <text x="300" y="42" className="ta-zone" fill="#4ad0e0">C · ENEMY</text>
-
-        {/* routes */}
-        {Object.entries(paths).map(([n, pts]) => (
-          <polyline key={n} points={pts.map((p) => p.join(",")).join(" ")} fill="none"
-            stroke={ROUTES[n - 1].color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
-            strokeDasharray="1 7" opacity={dim(Number(n))} style={{ transition: "opacity .2s" }} />
-        ))}
-
-        {/* Temple */}
-        <g>
-          <path d="M180 136 l14 14 -14 14 -14 -14 Z" fill="#ecc25a" stroke="#ffe08a" strokeWidth="1.5" />
-          <text x="180" y="176" textAnchor="middle" className="ta-node-lbl" fill="#ffe08a">TEMPLE</text>
-        </g>
-
-        {/* nodes */}
-        {Object.entries(N).map(([k, [x, y]]) => (
-          <g key={k}>
-            <circle cx={x} cy={y} r="5.5" fill="#1e2a35" stroke="#647787" strokeWidth="1.2" />
-            <text x={x} y={y - 9} textAnchor="middle" className="ta-node-lbl" fill="#a7b6c6">{k}{k === "B1" ? " HQ" : ""}</text>
-          </g>
-        ))}
-
-        {/* hold pins */}
-        {holds.map((h, i) => (
-          <path key={i} d={star(h.at[0], h.at[1])} fill={h.c} stroke="#0a0e13" strokeWidth="0.8" />
-        ))}
-      </svg>
+      <div className="ta-realmap-wrap">
+        <div className="ta-realmap">
+          <img src="/tri/map.jpg" alt="Tri-Alliance Clash battlefield map with all building codes" loading="lazy" />
+          <svg viewBox="0 0 1920 1401" preserveAspectRatio="none" aria-hidden="true">
+            {ROUTES.map((r) => (
+              <polyline key={r.n}
+                points={r.path.map((b) => MAP_NODES[b].join(",")).join(" ")}
+                fill="none" stroke={r.color} strokeWidth="11" strokeLinecap="round" strokeLinejoin="round"
+                strokeDasharray="3 24" opacity={dim(r.n)} style={{ transition: "opacity .2s" }} />
+            ))}
+            {ROUTES.map((r) => r.path.map((b) => (
+              <circle key={r.n + b} cx={MAP_NODES[b][0]} cy={MAP_NODES[b][1]} r="16"
+                fill="none" stroke={r.color} strokeWidth="6" opacity={dim(r.n)} style={{ transition: "opacity .2s" }} />
+            )))}
+            {MAP_HOLDS.map((h, i) => (
+              <path key={i} d={star(...MAP_NODES[h.at])} fill={h.c} stroke="#10151b" strokeWidth="3" />
+            ))}
+          </svg>
+        </div>
+      </div>
       <div className="ta-map-legend">
         {ROUTES.map((r) => (
           <button key={r.n} className={`ta-leg${active === r.n ? " on" : ""}`}
@@ -193,7 +184,7 @@ function BattleMap() {
           </button>
         ))}
       </div>
-      <div className="ta-note">★ = hold positions (Mid-game Hold Plan) · tap a route to highlight it</div>
+      <div className="ta-note">Real battle map — every building code is on it. Scroll the map sideways · tap a route to highlight it · ★ = hold positions.</div>
     </div>
   );
 }
@@ -244,11 +235,15 @@ function RouteCard({ r }) {
 export default function TriAlliance() {
   return (
     <div className="app ta">
-      {/* 1 · Header */}
-      <header className="ta-header">
-        <div className="eyebrow" style={{ color: "var(--gold)" }}>Alliance Command · Kingdom 1652</div>
-        <h1 className="ta-title metal">Ultimate Tri-Alliance Clash</h1>
-        <div className="ta-subtitle">Complete battle plan · 60-minute war for map control</div>
+      {/* 1 · Header — real battlefield backdrop */}
+      <header className="banner ta-banner">
+        <img src="/tri/header.jpg" alt="Temple of Tides at the center of the battlefield" />
+        <div className="scrim"></div>
+        <div className="b-in">
+          <div className="eyebrow" style={{ color: "var(--gold)" }}>Alliance Command · Kingdom 1652</div>
+          <div className="ta-title metal">Ultimate Tri-Alliance Clash</div>
+          <div className="ta-subtitle">Complete battle plan · 60-minute war for map control</div>
+        </div>
       </header>
 
       {/* 2 · Countdown */}
@@ -261,9 +256,10 @@ export default function TriAlliance() {
         <div className="ta-stat"><b className="metal">1,800</b><span>pts/min per Garrison/Temple</span></div>
       </div>
 
-      {/* 4 · Event overview */}
+      {/* 4 · Event overview + real registration screen */}
       <section className="ta-card">
         <div className="lbl">Event overview</div>
+        <img className="ta-regmap" src="/tri/regmap.jpg" alt="In-game registration: Earth Guard, Storm Guard and Tidal Guard bases on the triangular battlefield" loading="lazy" />
         <div className="ta-kv"><span>Format</span><b>3 alliances battle for map control</b></div>
         <div className="ta-kv"><span>Duration</span><b>60 minutes (4 phases)</b></div>
         <div className="ta-kv"><span>Frequency</span><b>Monthly (4-week cycle)</b></div>
@@ -272,7 +268,24 @@ export default function TriAlliance() {
         <div className="ta-kv"><span>Squads</span><b>Each player fields 3 squads of 3 heroes</b></div>
       </section>
 
-      {/* 5 · Phase timeline */}
+      {/* 5 · Key buildings — real in-game art */}
+      <section className="ta-card">
+        <div className="lbl">Key buildings · know what you're capturing</div>
+        <div className="ta-blds">
+          {BUILDINGS.map((b) => (
+            <div key={b.name} className={`ta-bld${b.hot ? " hot" : ""}`}>
+              <img src={b.img} alt={b.name} loading="lazy" />
+              <div className="ta-bld-body">
+                <div className="ta-bld-top"><b>{b.name}</b><span className="ta-bld-pts">{b.pts}</span></div>
+                <div className="ta-bld-codes">{b.codes}</div>
+                <div className="ta-bld-note">{b.note}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 6 · Phase timeline */}
       <section className="ta-card">
         <div className="lbl">Battle timeline · 4 phases</div>
         <div className="ta-tl">
@@ -295,20 +308,20 @@ export default function TriAlliance() {
         </div>
       </section>
 
-      {/* 6 · Map */}
+      {/* 7 · Real battlefield map with our routes */}
       <section className="ta-card">
-        <div className="lbl">Battlefield map · schematic</div>
-        <BattleMap />
+        <div className="lbl">Battlefield map · our 5 routes</div>
+        <RealMap />
       </section>
 
-      {/* 7 · Battle plan — 5 routes */}
+      {/* 8 · Battle plan — 5 routes */}
       <section className="ta-plan">
         <div className="eyebrow" style={{ color: "var(--gold)" }}>DAD Battle Plan · 5 routes × 6 players</div>
         <div className="ta-plan-stats">30 players · 3 Attackers + 3 Defenders per route · 5 Lane Leaders · main offensive focus: side A</div>
         {ROUTES.map((r) => <RouteCard key={r.n} r={r} />)}
       </section>
 
-      {/* 8 · Mid-game hold plan */}
+      {/* 9 · Mid-game hold plan */}
       <section className="ta-card">
         <div className="eyebrow" style={{ color: "var(--gold)" }}>Mid-game Hold Plan · from ~min 15–20</div>
         <p className="ta-p">Once the initial advance is done and Garrisons open (min 20), Defender groups anchor the priority buildings closest to their position. Attackers stay mobile for pressure and the Temple push.</p>
@@ -325,7 +338,7 @@ export default function TriAlliance() {
         <div className="ta-note">A1–A4 (12 attackers) remain mobile: keep pressure, then converge on the Temple at min 40.</div>
       </section>
 
-      {/* 9 · Roles + Lane Leaders */}
+      {/* 10 · Roles + Lane Leaders */}
       <div className="ta-2col">
         <section className="ta-card">
           <div className="ta-role-h">⚔ Attacker</div>
@@ -350,7 +363,7 @@ export default function TriAlliance() {
         <p className="ta-p">Coordinate the route in real time and make the tactical calls for their 5 teammates.</p>
       </section>
 
-      {/* 10 · Heroes & squads */}
+      {/* 11 · Heroes & squads */}
       <section className="ta-card">
         <div className="eyebrow" style={{ color: "var(--gold)" }}>Hero setup · 3 squads × 3 heroes · 300k troops each (fixed)</div>
         <div className="ta-squads">
@@ -368,7 +381,7 @@ export default function TriAlliance() {
         <div className="ta-avoid">❌ Avoid: Diana (no battle skills) · Blue-tier heroes (underperform here)</div>
       </section>
 
-      {/* 11 · Essential rules */}
+      {/* 12 · Essential rules */}
       <section className="ta-card">
         <div className="lbl">Essential rules</div>
         <div className="ta-rules">
@@ -378,13 +391,13 @@ export default function TriAlliance() {
         </div>
       </section>
 
-      {/* 12 · Tactical discipline */}
+      {/* 13 · Tactical discipline */}
       <section className="ta-card">
         <div className="lbl">Tactical discipline</div>
         <ul className="ta-ul">{DISCIPLINE.map((d) => <li key={d}>{d}</li>)}</ul>
       </section>
 
-      {/* 13 · Buffs */}
+      {/* 14 · Buffs */}
       <div className="ta-2col">
         <section className="ta-card">
           <div className="ta-buff-h ok">✅ Effective</div>
@@ -400,14 +413,14 @@ export default function TriAlliance() {
         </section>
       </div>
 
-      {/* 14 · Eligibility */}
+      {/* 15 · Eligibility */}
       <section className="ta-card">
         <div className="lbl">Eligibility</div>
         <div className="ta-kv"><span>Alliance</span><b>Top 20 kingdom power · Lv 6+ and 40+ actives for a 2nd legion · min 15 per legion</b></div>
         <div className="ta-kv"><span>Player</span><b>Town Center 16+ · not inactive 5+ days · registered Wed–Thu · substitutes count in matchmaking</b></div>
       </section>
 
-      {/* 15 · Weekly schedule */}
+      {/* 16 · Weekly schedule */}
       <section className="ta-card">
         <div className="lbl">Weekly schedule</div>
         <div className="ta-week">
@@ -418,7 +431,7 @@ export default function TriAlliance() {
         </div>
       </section>
 
-      {/* 16 · Rewards */}
+      {/* 17 · Rewards */}
       <section className="ta-card">
         <div className="lbl">Rewards</div>
         <div className="ta-kv"><span>Alliance</span><b>Ranking rewards (Legion 1's placement) — Tidal Stone Coins, gems, resources</b></div>
@@ -426,7 +439,7 @@ export default function TriAlliance() {
         <div className="ta-kv"><span>Event store</span><b>Tidal Stone Coins · items refresh every 2 weeks</b></div>
       </section>
 
-      {/* 17 · Footer */}
+      {/* 18 · Footer */}
       <div className="foot">Battle plan v2 · Confirm your route with your Lane Leader before Saturday · Check the pinned messages</div>
     </div>
   );
