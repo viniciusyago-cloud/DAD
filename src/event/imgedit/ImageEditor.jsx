@@ -1,8 +1,9 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { supabase } from "../../supabaseClient.js";
 import { normImg, ANIMS, useNatural } from "./Pic.jsx";
 import { PALETTE } from "../blocks.js";
 import AssetPicker from "../AssetPicker.jsx";
+import { loadImage, autoColor, pickColor, removeBackground, trimTransparent, canvasToBlob } from "./bgremove.js";
 
 /* ============================================================
    IMAGE / TACTICAL ANNOTATION EDITOR
@@ -20,6 +21,7 @@ const TOOLS = [
   { k: "text",   l: "Texto",      d: "M5 6h14M12 6v13" },
   { k: "icon",   l: "Ícone",      d: "M12 3l2.6 5.6 6 .8-4.4 4.2 1.1 6L12 16.7 6.7 19.6l1.1-6L3.4 9.4l6-.8z" },
   { k: "crop",   l: "Cortar",     d: "M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14" },
+  { k: "bg",     l: "Remover fundo", d: "M4 4h7v7H4zM13 13h7v7h-7zM13 4h7v7h-7zM4 13h7v7H4z" },
 ];
 
 
@@ -37,6 +39,7 @@ export default function ImageEditor({ value, onSave, onClose }) {
   const [cropDraft, setCropDraft] = useState(null);
   const [busy, setBusy] = useState(false);
   const [iconPick, setIconPick] = useState(false);
+  const [bg, setBg] = useState(null);   // { color, tolerance, mode, feather, trim, preview, busy, err }
   const stage = useRef(null);
   const drag = useRef(null);
   const fileRef = useRef(null);
@@ -66,6 +69,7 @@ export default function ImageEditor({ value, onSave, onClose }) {
   const onDown = (e) => {
     if (!src) return;
     const [x, y] = pt(e);
+    if (tool === "bg") { bgPrepare([x, y]); return; }
     if (tool === "crop") { setCropDraft({ x, y, x2: x, y2: y }); return; }
     if (tool === "select") {
       const hit = hitTest(x, y, layers);
@@ -153,6 +157,61 @@ export default function ImageEditor({ value, onSave, onClose }) {
     finally { setBusy(false); }
   };
 
+  /* ---------- background removal ---------- */
+  const bgSrcData = useRef(null);   // untouched pixels of the current image
+
+  const bgPrepare = useCallback(async (pickAt) => {
+    setBg((b) => ({ ...(b || {}), busy: true, err: "" }));
+    try {
+      const img = await loadImage(src);
+      const cv = document.createElement("canvas");
+      cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+      const ctx = cv.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0);
+      const data = ctx.getImageData(0, 0, cv.width, cv.height);   // throws if cross-origin blocked
+      bgSrcData.current = data;
+      const color = pickAt
+        ? pickColor(ctx, Math.min(cv.width - 1, Math.round(pickAt[0] * cv.width)),
+                         Math.min(cv.height - 1, Math.round(pickAt[1] * cv.height)))
+        : autoColor(ctx, cv.width, cv.height);
+      setBg({ color, tolerance: 30, mode: "edge", feather: 6, trim: false, busy: false, err: "" });
+    } catch (e) {
+      console.error(e);
+      setBg({ err: "Não consegui ler os pixels desta imagem (bloqueio de origem). Envie-a do aparelho e tente de novo.", busy: false });
+    }
+  }, [src]);
+
+  const bgPreviewUrl = useMemo(() => {
+    if (!bg || bg.err || !bgSrcData.current || !bg.color) return null;
+    const d = bgSrcData.current;
+    const out = removeBackground(d, bg);
+    const cv = document.createElement("canvas");
+    cv.width = d.width; cv.height = d.height;
+    cv.getContext("2d").putImageData(out, 0, 0);
+    return cv.toDataURL("image/png");
+  }, [bg]);
+
+  const bgApply = async () => {
+    if (!bg || !bgSrcData.current) return;
+    setBusy(true);
+    try {
+      const d = bgSrcData.current;
+      let cv = document.createElement("canvas");
+      cv.width = d.width; cv.height = d.height;
+      cv.getContext("2d").putImageData(removeBackground(d, bg), 0, 0);
+      if (bg.trim) cv = trimTransparent(cv);
+      const blob = await canvasToBlob(cv);
+      const path = `cut/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}.png`;
+      const { error } = await supabase.storage.from("event-assets")
+        .upload(path, blob, { cacheControl: "31536000", contentType: "image/png" });
+      if (error) throw error;
+      setSrc(supabase.storage.from("event-assets").getPublicUrl(path).data.publicUrl);
+      if (bg.trim) setCrop(null);
+      setBg(null); setTool("select");
+    } catch (e) { console.error(e); alert("Falha ao aplicar. Tente de novo."); }
+    finally { setBusy(false); }
+  };
+
   const save = () => onSave(layers.length || crop ? { src, crop, layers } : src);
 
   const W = nat.w * c.w, H = nat.h * c.h;
@@ -185,7 +244,10 @@ export default function ImageEditor({ value, onSave, onClose }) {
             <div className="ie-tools">
               {TOOLS.map((t) => (
                 <button key={t.k} className={`ie-tool${tool === t.k ? " on" : ""}`} title={t.l}
-                        onClick={() => { setTool(t.k); setDraft(null); setCropDraft(null); }}>
+                        onClick={() => {
+                          setTool(t.k); setDraft(null); setCropDraft(null);
+                          if (t.k === "bg") bgPrepare(null); else setBg(null);
+                        }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                        strokeLinecap="round" strokeLinejoin="round"><path d={t.d} /></svg>
                 </button>
@@ -211,7 +273,7 @@ export default function ImageEditor({ value, onSave, onClose }) {
               <div className="ie-stage" ref={stage} onPointerDown={onDown} onPointerMove={onMove}
                    onPointerUp={onUp} onPointerLeave={onUp}
                    style={{ aspectRatio: `${W} / ${H}`, cursor: tool === "select" ? "default" : "crosshair" }}>
-                <img src={src} alt="" draggable="false"
+                <img src={bgPreviewUrl || src} alt="" draggable="false"
                      style={{ position: "absolute", width: `${100 / c.w}%`, height: `${100 / c.h}%`,
                               left: `${(-c.x * 100) / c.w}%`, top: `${(-c.y * 100) / c.h}%`, objectFit: "cover" }} />
                 <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="ie-svg">
@@ -233,7 +295,8 @@ export default function ImageEditor({ value, onSave, onClose }) {
                 </svg>
               </div>
               <div className="ie-hint">
-                {tool === "route" ? "Clique para adicionar pontos · depois “Concluir rota”"
+                {tool === "bg" ? "Clique numa área do fundo para escolher a cor · ajuste ao lado"
+                  : tool === "route" ? "Clique para adicionar pontos · depois “Concluir rota”"
                   : tool === "crop" ? "Arraste a área que quer manter"
                   : tool === "select" ? "Clique para selecionar · arraste para mover"
                   : "Clique ou arraste sobre a imagem"}
@@ -242,6 +305,54 @@ export default function ImageEditor({ value, onSave, onClose }) {
 
             {/* inspector */}
             <aside className="ie-side">
+              {bg && (
+                <div className="ie-bgpanel">
+                  <div className="ie-side-h">Remover fundo</div>
+                  {bg.err ? <div className="f-err">{bg.err}</div> : bg.busy ? (
+                    <div className="ie-none">Lendo a imagem…</div>
+                  ) : (
+                    <>
+                      <div className="ie-f">
+                        <span>Cor removida — clique na imagem para trocar</span>
+                        <div className="ie-bgcolor">
+                          <i style={{ background: `rgb(${bg.color.join(",")})` }} />
+                          <code>rgb({bg.color.join(", ")})</code>
+                        </div>
+                      </div>
+                      <div className="ie-f">
+                        <span>Alcance {bg.tolerance}</span>
+                        <input type="range" min="1" max="100" value={bg.tolerance}
+                               onChange={(e) => setBg({ ...bg, tolerance: +e.target.value })} />
+                      </div>
+                      <div className="ie-f">
+                        <span>Suavizar borda {bg.feather}</span>
+                        <input type="range" min="0" max="20" value={bg.feather}
+                               onChange={(e) => setBg({ ...bg, feather: +e.target.value })} />
+                      </div>
+                      <div className="ie-f">
+                        <span>Modo</span>
+                        <select value={bg.mode} onChange={(e) => setBg({ ...bg, mode: e.target.value })}>
+                          <option value="edge">Só o fundo em volta</option>
+                          <option value="all">Essa cor em toda a imagem</option>
+                        </select>
+                      </div>
+                      <label className="ie-f ie-f-row">
+                        <span>Cortar sobras vazias</span>
+                        <input type="checkbox" checked={!!bg.trim}
+                               onChange={(e) => setBg({ ...bg, trim: e.target.checked })} />
+                      </label>
+                      <div className="ie-bgacts">
+                        <button className="ie-btn" onClick={() => { setBg(null); setTool("select"); }}>Cancelar</button>
+                        <button className="ie-btn ie-btn-gold" onClick={bgApply} disabled={busy}>
+                          {busy ? "Aplicando…" : "Aplicar (PNG)"}
+                        </button>
+                      </div>
+                      <div className="ie-bghint">Vira um PNG transparente. GIF animado perde a animação.</div>
+                    </>
+                  )}
+                </div>
+              )}
+
               <div className="ie-side-h">Camadas</div>
               <div className="ie-layers">
                 {layers.length === 0 && <div className="ie-none">Nenhuma anotação ainda.</div>}
