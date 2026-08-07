@@ -11,8 +11,7 @@ import { DEFAULT_THEME } from "./blocks.js";
    ============================================================ */
 
 export default function EventPage() {
-  const { slug: slugParam } = useParams();
-  const slug = slugParam || "tri-alliance";
+  const { slug } = useParams();
 
   const [doc, setDoc] = useState(null);
   const [state, setState] = useState("loading");
@@ -28,6 +27,7 @@ export default function EventPage() {
         const d = data?.doc;
         const header = Array.isArray(d?.header) ? d.header : (Array.isArray(d?.blocks) ? d.blocks : []);
         const tabs = Array.isArray(d?.tabs) ? d.tabs : [];
+        if (!data) { setState("missing"); return; }
         if (!header.length && !tabs.some((t) => t.blocks?.length)) { setState("empty"); return; }
         setDoc({ theme: { ...DEFAULT_THEME, ...(d.theme || {}) }, header, tabs, title: data.title });
         setState("ok");

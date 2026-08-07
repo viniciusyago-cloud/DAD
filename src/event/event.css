@@ -496,3 +496,43 @@ body .site-foot { position: fixed; }
 
 /* builder canvas: entrance animations must not hide blocks */
 .ev-blk-in .rv { opacity: 1 !important; transform: none !important; }
+
+/* =============================================================
+   /paginas — page manager
+   ============================================================= */
+.pages-idx { padding-bottom: 60px; }
+.pi-head { padding: 8px 2px 6px; }
+.pi-title { font-family: var(--font-display); font-size: 30px; font-weight: 700; margin: 0; line-height: 1; }
+.pi-new { margin-top: 14px; padding: 14px; border-radius: 14px;
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  box-shadow: 0 0 0 1px var(--edge), inset 0 1px 0 #ffffff0d; }
+.pi-new-row { display: flex; gap: 8px; }
+.pi-new-row .field { flex: 1; min-width: 0; }
+.pi-new-row .btn-gold { flex: 0 0 auto; padding: 12px 20px; }
+.pi-new code { color: var(--gold-lt); }
+
+.pi-list { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; }
+.pi-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 11px 13px; border-radius: 12px;
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  box-shadow: 0 0 0 1px var(--edge), inset 0 1px 0 #ffffff0a; }
+.pi-row.pi-fixed { opacity: .72; }
+.pi-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pi-info b { font-size: 14.5px; font-weight: 700; color: var(--ink); }
+.pi-info code { font-size: 11px; color: var(--ink-mute); }
+.pi-tag { flex-shrink: 0; font-size: 8.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-mute); padding: 3px 8px; border-radius: 5px; box-shadow: inset 0 0 0 1px var(--edge); }
+.pi-acts { display: flex; gap: 2px; flex-shrink: 0; }
+.pi-acts button { width: 26px; height: 26px; border: none; border-radius: 6px; background: transparent;
+  color: var(--ink-mute); font-size: 13px; cursor: pointer; }
+.pi-acts button:hover:not(:disabled) { background: var(--well); color: var(--gold); }
+.pi-acts button:disabled { opacity: .3; cursor: default; }
+.pi-acts button.x:hover { color: var(--arch); }
+.pi-links { display: flex; gap: 7px; width: 100%; }
+.pi-links a { flex: 1; text-align: center; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700;
+  text-decoration: none; color: var(--ink-dim); background: var(--well); box-shadow: 0 0 0 1px var(--edge); }
+.pi-links a:hover { color: var(--ink); }
+.pi-links a.gold { color: var(--gold-lt); }
+.pi-links a.gold:hover { box-shadow: 0 0 0 1px var(--gold-dk); }
+
+/* the "+" chip that opens the page manager */
+.nav-chip.nav-manage { font-size: 17px; line-height: 1; padding-left: 13px; padding-right: 13px; }

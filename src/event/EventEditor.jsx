@@ -33,13 +33,14 @@ function findIn(blocks, id) {
 }
 
 export default function EventEditor() {
-  const { slug: slugParam } = useParams();
-  const slug = slugParam || "tri-alliance";
+  const { slug } = useParams();
 
   const [doc, setDoc] = useState(null);
   const [pageId, setPageId] = useState(null);
   const [title, setTitle] = useState("");
   const [newSlug, setNewSlug] = useState(slug);
+  const [navLabel, setNavLabel] = useState("");
+  const [inNav, setInNav] = useState(true);
   const [area, setArea] = useState("header");
   const [sel, setSel] = useState(null);
   const [tab, setTab] = useState("content");
@@ -58,7 +59,9 @@ export default function EventEditor() {
       try {
         const { data, error } = await supabase.from("event_pages").select("*").eq("slug", slug).maybeSingle();
         if (error) throw error;
-        if (data) { setPageId(data.id); setTitle(data.title || ""); setNewSlug(data.slug); setDoc(normalize(data.doc)); }
+        if (data) { setPageId(data.id); setTitle(data.title || ""); setNewSlug(data.slug);
+          setNavLabel(data.nav_label || data.title || ""); setInNav(data.in_nav !== false);
+          setDoc(normalize(data.doc)); }
         else {
           const fresh = normalize(null);
           const { data: made, error: e2 } = await supabase.from("event_pages")
@@ -173,13 +176,17 @@ export default function EventEditor() {
   };
 
   /* ---- settings: slug + share ---- */
-  const publicUrl = `${window.location.origin}/e/${slug}`;
-  const saveSlug = async () => {
+  const publicUrl = `${window.location.origin}/${slug}`;
+  const RESERVED = ["paginas", "dados", "editar", "tri-alliance", "e", "p", "evento"];
+  const saveSettings = async () => {
     const s = newSlug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
-    if (!s || s === slug) { setSettings(false); return; }
-    const { error } = await supabase.from("event_pages").update({ slug: s }).eq("id", pageId);
+    if (!s) { alert("Escolha um endereço válido."); return; }
+    if (s !== slug && RESERVED.includes(s)) { alert(`"${s}" é um endereço reservado.`); return; }
+    const { error } = await supabase.from("event_pages")
+      .update({ slug: s, nav_label: navLabel.trim() || title, in_nav: inNav }).eq("id", pageId);
     if (error) { alert("Esse endereço já existe. Escolha outro."); return; }
-    window.location.href = `/e/${s}/editar`;
+    if (s !== slug) window.location.href = `/${s}/editar`;
+    else setSettings(false);
   };
   const copyLink = async () => {
     try { await navigator.clipboard.writeText(publicUrl); setCopied(true); setTimeout(() => setCopied(false), 1800); }
@@ -200,7 +207,7 @@ export default function EventEditor() {
         </span>
         <button className="ev-ico" onClick={() => setSettings(true)} title="Configurações e link">⚙</button>
         <button className="ev-ico" onClick={undo} title="Desfazer">↺</button>
-        <a className="ev-ico" href={`/e/${slug}`} title="Ver página">◱</a>
+        <a className="ev-ico" href={`/${slug}`} title="Ver página">◱</a>
       </header>
 
       <div className="ev-areas">
@@ -303,6 +310,15 @@ export default function EventEditor() {
               </div>
               <div className="f-hint">Só letras, números e hífen. Mudar o endereço quebra links antigos.</div>
 
+              <label className="f-lbl" style={{ marginTop: 16 }}>Botão no menu da aliança</label>
+              <input className="f-in" value={navLabel} onChange={(e) => setNavLabel(e.target.value)}
+                     placeholder="Nome que aparece no menu" />
+              <label className="f f-row" style={{ marginTop: 10 }}>
+                <span className="f-lbl" style={{ marginBottom: 0 }}>Mostrar no menu</span>
+                <button type="button" className={`f-tog${inNav ? " on" : ""}`}
+                        onClick={() => setInNav((v) => !v)}><span /></button>
+              </label>
+
               <label className="f-lbl" style={{ marginTop: 16 }}>Link para compartilhar</label>
               <div className="ev-share">
                 <code>{publicUrl}</code>
@@ -311,7 +327,7 @@ export default function EventEditor() {
 
               <div className="sheet-actions">
                 <button className="btn-ghost" onClick={() => setSettings(false)}>Fechar</button>
-                <button className="btn-gold" onClick={saveSlug}>Salvar endereço</button>
+                <button className="btn-gold" onClick={saveSettings}>Salvar</button>
               </div>
             </div>
           </div>

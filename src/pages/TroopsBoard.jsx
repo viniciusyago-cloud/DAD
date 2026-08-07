@@ -259,7 +259,7 @@ export default function TroopsBoard() {
               <div className="r-body">
                 <div className="r-top">
                   <span className="r-name">{r.name}</span>
-                  {r.tier && <TierIcon tier={r.tier} size={20} />}
+                  {r.tier && <TierIcon tier={r.tier} size={28} />}
                   <button
                     className="kebab"
                     aria-label="Options"
