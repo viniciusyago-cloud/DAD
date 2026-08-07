@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { supabase } from "../supabaseClient.js";
+import TierIcon, { TierPicker, tierRank } from "../components/TierIcon.jsx";
 
 /* ============================================================
    BigDaddys — TROOPS INTELLIGENCE BOARD  (Vercel + Supabase)
@@ -10,18 +11,6 @@ import { supabase } from "../supabaseClient.js";
 const AVATARS = ["panther", "cheetah", "lynx", "elephant", "wolf"];
 const avatarSrc = (a) => `/avatars/${AVATARS.includes(a) ? a : "panther"}.png`;
 const TROOP_ICON = { inf: "/troops/infantry.png", cav: "/troops/cavalry.png", arch: "/troops/archer.png" };
-
-// Quick presets for the "pick a range" dropdown in the editor
-const PRESETS = [
-  { label: "< 200k", v: 150000 },
-  { label: "200–300k", v: 250000 },
-  { label: "300–400k", v: 350000 },
-  { label: "400–500k", v: 450000 },
-  { label: "500–600k", v: 550000 },
-  { label: "600–700k", v: 650000 },
-  { label: "700–800k", v: 750000 },
-  { label: "> 800k", v: 850000 },
-];
 
 // Fallback: derive an exact count from a legacy range label (pre-migration safety)
 const RANGE_MID = {
@@ -65,7 +54,7 @@ export default function TroopsBoard() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
-  const [sortBy, setSortBy] = useState("total"); // total | name
+  const [sortBy, setSortBy] = useState("tier"); // tier | total | name
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState("");
   const [menuId, setMenuId] = useState(null);
@@ -133,7 +122,11 @@ export default function TroopsBoard() {
     }
     v = [...v].sort((a, b) => {
       if (sortBy === "name") return (a.name || "").localeCompare(b.name || "");
-      return b.total - a.total; // total = army size (troops)
+      if (sortBy === "tier") {
+        const d = tierRank(b.tier) - tierRank(a.tier);   // higher tier first
+        if (d) return d;
+      }
+      return b.total - a.total;                          // then army size
     });
     return v;
   }, [rows, search, sortBy]);
@@ -149,6 +142,8 @@ export default function TroopsBoard() {
       inf_count: Number(form.inf) || 0,
       cav_count: Number(form.cav) || 0,
       arch_count: Number(form.arch) || 0,
+      tier: form.tier || null,
+      power: Number(form.power) || 0,
     };
     try {
       if (form.mode === "edit") {
@@ -183,8 +178,10 @@ export default function TroopsBoard() {
     }
   };
 
-  const openAdd = () => setForm({ mode: "add", id: null, name: "", avatar: "panther", inf: 0, cav: 0, arch: 0 });
-  const openEdit = (r) => setForm({ mode: "edit", id: r.id, name: r.name, avatar: r.avatar || "panther", inf: r.inf, cav: r.cav, arch: r.arch });
+  const openAdd = () => setForm({ mode: "add", id: null, name: "", avatar: "panther",
+    inf: 0, cav: 0, arch: 0, tier: "", power: "" });
+  const openEdit = (r) => setForm({ mode: "edit", id: r.id, name: r.name, avatar: r.avatar || "panther",
+    inf: r.inf, cav: r.cav, arch: r.arch, tier: r.tier || "", power: r.power ?? "" });
 
   if (loading) {
     return (
@@ -246,6 +243,7 @@ export default function TroopsBoard() {
             <input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <div className="seg">
+            <button className={sortBy === "tier" ? "on" : ""} onClick={() => setSortBy("tier")}>Tier</button>
             <button className={sortBy === "total" ? "on" : ""} onClick={() => setSortBy("total")}>Total</button>
             <button className={sortBy === "name" ? "on" : ""} onClick={() => setSortBy("name")}>Name</button>
           </div>
@@ -261,7 +259,7 @@ export default function TroopsBoard() {
               <div className="r-body">
                 <div className="r-top">
                   <span className="r-name">{r.name}</span>
-                  <span className="r-total">~{fmt(r.total)}</span>
+                  {r.tier && <TierIcon tier={r.tier} size={20} />}
                   <button
                     className="kebab"
                     aria-label="Options"
@@ -274,6 +272,10 @@ export default function TroopsBoard() {
                   <TChip cls="inf" icon={TROOP_ICON.inf} value={r.inf} />
                   <TChip cls="cav" icon={TROOP_ICON.cav} value={r.cav} />
                   <TChip cls="arch" icon={TROOP_ICON.arch} value={r.arch} />
+                </div>
+                <div className="r-stats">
+                  <span><i>Power</i>{r.power > 0 ? `${trim1(Number(r.power))}M` : "—"}</span>
+                  <span><i>Total</i>{fmt(r.total)}</span>
                 </div>
               </div>
               {menuId === r.id && (
@@ -300,7 +302,7 @@ export default function TroopsBoard() {
           <div className={`sheet${form.mode === "edit" ? " edit" : ""}`}>
             <div className="grip"></div>
             <h3 className="metal">{form.mode === "edit" ? "Edit member" : "New member"}</h3>
-            <div className="sheet-sub">Type the exact troop counts, or pick a range from the list.</div>
+            <div className="sheet-sub">Type the exact troop counts. The total adds up on its own.</div>
 
             <label className="field-lbl">Name</label>
             <input className="field" placeholder="Member name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -314,11 +316,31 @@ export default function TroopsBoard() {
               ))}
             </div>
 
+            <label className="field-lbl">Troop tier</label>
+            <TierPicker value={form.tier} onChange={(t) => setForm({ ...form, tier: t })} />
+
             <label className="field-lbl">Troops — exact count</label>
             <div className="sheet-troops">
               <TroopField cls="inf" icon={TROOP_ICON.inf} label="Infantry" value={form.inf} onSet={(v) => setForm({ ...form, inf: v })} />
               <TroopField cls="cav" icon={TROOP_ICON.cav} label="Cavalry" value={form.cav} onSet={(v) => setForm({ ...form, cav: v })} />
               <TroopField cls="arch" icon={TROOP_ICON.arch} label="Archery" value={form.arch} onSet={(v) => setForm({ ...form, arch: v })} />
+              <div className="st-row st-total">
+                <span className="st-lbl">Total</span>
+                <div className="st-in">
+                  <output className="st-num st-ro">
+                    {((Number(form.inf) || 0) + (Number(form.cav) || 0) + (Number(form.arch) || 0)).toLocaleString("en-US")}
+                  </output>
+                </div>
+              </div>
+            </div>
+
+            <label className="field-lbl">Power (in millions)</label>
+            <div className="st-in">
+              <input className="st-num" inputMode="decimal" placeholder="218.7"
+                     value={form.power}
+                     onChange={(e) => setForm({ ...form, power: e.target.value.replace(/[^\d.]/g, "") })}
+                     aria-label="Power in millions" />
+              <span className="st-unit">M</span>
             </div>
 
             <div className="sheet-actions">
@@ -369,10 +391,6 @@ function TroopField({ cls, icon, label, value, onSet }) {
           onChange={(e) => onSet(parseInt(e.target.value.replace(/\D/g, ""), 10) || 0)}
           aria-label={`${label} count`}
         />
-        <select className="st-preset" value="" onChange={(e) => { if (e.target.value) onSet(Number(e.target.value)); }} aria-label="Pick a range">
-          <option value="">Range</option>
-          {PRESETS.map((p) => <option key={p.v} value={p.v}>{p.label}</option>)}
-        </select>
       </div>
     </div>
   );
