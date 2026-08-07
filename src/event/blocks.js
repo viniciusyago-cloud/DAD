@@ -262,7 +262,7 @@ export const BLOCKS = {
     ],
   },
   roster: {
-    label: "Membros / Escalação", group: "Evento", icon: "users",
+    label: "Lista de pessoas (livre)", group: "Evento", icon: "users",
     defaults: { ...baseStyle, cols: 2, items: [
       { avatar: "", name: "Nome do jogador", role: "Função", note: "" },
     ] },
@@ -368,6 +368,43 @@ export const BLOCKS = {
     fields: [
       { key: "cols", type: "select", label: "Colunas internas", options: [
         { v: 1, l: "1" }, { v: 2, l: "2" }, { v: 3, l: "3" } ] },
+    ],
+  },
+
+  /* ---------------- Members ---------------- */
+  lineup: {
+    label: "Escalação (vagas + confirmação)", group: "Membros",
+    defaults: { ...baseStyle, _bg: "panel", _title: "Entrar", slots: 30, cols: 1,
+      show: { avatar: true, name: true, tier: true, power: true, troops: true },
+      askConfirm: true, picks: [] },
+    fields: [
+      { key: "slots", type: "number", label: "Vagas", min: 0, max: 200 },
+      { key: "askConfirm", type: "toggle", label: "Pedir confirmação de participação" },
+      { key: "cols", type: "select", label: "Colunas", options: [
+        { v: 1, l: "1" }, { v: 2, l: "2" } ] },
+      { key: "show", type: "checks", label: "O que mostrar de cada jogador" },
+      { key: "picks", type: "members", label: "Quem está escalado" },
+    ],
+  },
+  memberlist: {
+    label: "Membros (seção livre)", group: "Membros",
+    defaults: { ...baseStyle, _bg: "panel", _title: "Membros", cols: 2,
+      show: { avatar: true, name: true, tier: true, power: true, troops: true }, picks: [] },
+    fields: [
+      { key: "cols", type: "select", label: "Colunas", options: [
+        { v: 1, l: "1" }, { v: 2, l: "2" }, { v: 3, l: "3" } ] },
+      { key: "show", type: "checks", label: "O que mostrar de cada jogador" },
+      { key: "picks", type: "members", label: "Membros selecionados" },
+    ],
+  },
+  confirmed: {
+    label: "Confirmados (resumo)", group: "Membros",
+    defaults: { ...baseStyle, _bg: "panel", _title: "Confirmações",
+      only: [], showNames: true, showTotal: true },
+    fields: [
+      { key: "only", type: "lineups", label: "Quais escalações somar" },
+      { key: "showNames", type: "toggle", label: "Listar os nomes" },
+      { key: "showTotal", type: "toggle", label: "Mostrar o total geral" },
     ],
   },
 
@@ -527,7 +564,7 @@ export const BLOCKS = {
   },
 };
 
-export const GROUPS = ["Estrutura", "Mídia", "Evento", "Batalha"];
+export const GROUPS = ["Estrutura", "Mídia", "Evento", "Membros", "Batalha"];
 
 export const newBlock = (type) => ({
   id: `b${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`,

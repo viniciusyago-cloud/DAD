@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient.js";
 import BlockView from "./BlockView.jsx";
 import { DEFAULT_THEME } from "./blocks.js";
+import { PageCtx } from "./MemberBlocks.jsx";
 
 /* ============================================================
    EVENT PAGE (public) — /e/:slug
@@ -53,6 +54,7 @@ export default function EventPage() {
   const cur = tabs[Math.min(active, Math.max(0, tabs.length - 1))];
 
   return (
+    <PageCtx.Provider value={{ slug, doc, preview: false }}>
     <div className="app ev-page">
       {doc.header.map((b) => <BlockView key={b.id} b={b} />)}
 
@@ -68,5 +70,6 @@ export default function EventPage() {
 
       {cur?.blocks.map((b) => <BlockView key={b.id} b={b} />)}
     </div>
+    </PageCtx.Provider>
   );
 }

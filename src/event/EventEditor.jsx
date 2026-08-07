@@ -4,6 +4,7 @@ import { supabase } from "../supabaseClient.js";
 import { BLOCKS, GROUPS, STYLE_FIELDS, TITLE_FIELD, newBlock, DEFAULT_THEME } from "./blocks.js";
 import BlockView from "./BlockView.jsx";
 import Field from "./Fields.jsx";
+import { PageCtx } from "./MemberBlocks.jsx";
 
 /* ============================================================
    EVENT PAGE BUILDER — /e/:slug/editar
@@ -203,6 +204,7 @@ export default function EventEditor() {
   const contentFields = schema ? (schema.raw ? schema.fields : [TITLE_FIELD, ...schema.fields]) : [];
 
   return (
+    <PageCtx.Provider value={{ slug, doc, preview: true }}>
     <div className="ev-editor">
       <header className="ev-bar">
         <input className="ev-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nome do evento" />
@@ -338,6 +340,7 @@ export default function EventEditor() {
         </div>
       )}
     </div>
+    </PageCtx.Provider>
   );
 }
 

@@ -1,9 +1,12 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useContext } from "react";
 import { supabase } from "../supabaseClient.js";
 import { PALETTE } from "./blocks.js";
 import ImageEditor from "./imgedit/ImageEditor.jsx";
 import { imgSrc, hasAnno } from "./imgedit/Pic.jsx";
 import AssetPicker from "./AssetPicker.jsx";
+import MemberPicker, { FieldChecks } from "./MemberPicker.jsx";
+import { findLineups } from "./members.js";
+import { PageCtx } from "./MemberBlocks.jsx";
 
 /* ============================================================
    SCHEMA-DRIVEN FIELD EDITORS
@@ -267,6 +270,16 @@ export default function Field({ field, value, onChange }) {
     case "list":
       return <div className="f">{label}<ListField field={field} value={value} onChange={onChange} /></div>;
 
+    case "checks":
+      return <div className="f">{label}<FieldChecks value={value} onChange={onChange} /></div>;
+
+    case "members":
+      return <div className="f">{label}
+        <MemberPicker value={value} onChange={onChange} slots={field.slots} /></div>;
+
+    case "lineups":
+      return <div className="f">{label}<LineupPicker value={value} onChange={onChange} /></div>;
+
     default:
       return (
         <div className="f">{label}
@@ -274,4 +287,28 @@ export default function Field({ field, value, onChange }) {
         </div>
       );
   }
+}
+
+/* ---------- pick which lineup blocks a summary adds up ---------- */
+function LineupPicker({ value, onChange }) {
+  const { doc } = useContext(PageCtx);
+  const lineups = findLineups(doc);
+  const only = value || [];
+  if (!lineups.length) {
+    return <div className="f-hint">Nenhuma escalação nesta página ainda.</div>;
+  }
+  const toggle = (id) =>
+    onChange(only.includes(id) ? only.filter((x) => x !== id) : [...only, id]);
+  return (
+    <div className="mp-checks">
+      <button type="button" className={`mp-check${only.length === 0 ? " on" : ""}`}
+              onClick={() => onChange([])}><i />Todas</button>
+      {lineups.map((l) => (
+        <button type="button" key={l.id} className={`mp-check${only.includes(l.id) ? " on" : ""}`}
+                onClick={() => toggle(l.id)}>
+          <i />{l._title || l.label || "Escalação"}
+        </button>
+      ))}
+    </div>
+  );
 }

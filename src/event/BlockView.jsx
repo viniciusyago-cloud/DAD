@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BattlePlan, Phases, Buildings, Rules, Marches, HowWeWin, BattleCd } from "./TriBlocks.jsx";
 import Pic, { imgSrc, hasAnno } from "./imgedit/Pic.jsx";
+import { Lineup, MembersBlock, Confirmed } from "./MemberBlocks.jsx";
 
 /* ============================================================
    BLOCK RENDERER — draws any block from the registry.
@@ -143,7 +144,8 @@ function Title({ b }) {
 }
 
 /* --- the renderer --- */
-const PANEL_BY_DEFAULT = new Set(["phases", "buildings", "rules", "marches", "howwewin", "battlecd", "squads"]);
+const PANEL_BY_DEFAULT = new Set(["phases", "buildings", "rules", "marches", "howwewin", "battlecd",
+  "squads", "lineup", "memberlist", "confirmed"]);
 
 export default function BlockView({ b }) {
   if (PANEL_BY_DEFAULT.has(b.type) && b._bg == null) b = { ...b, _bg: "panel" };
@@ -176,6 +178,9 @@ export default function BlockView({ b }) {
     case "marches":   return wrap(<Marches b={b} />);
     case "howwewin":  return wrap(<HowWeWin b={b} />);
     case "battlecd":  return wrap(<BattleCd b={b} />);
+    case "lineup":     return wrap(<Lineup b={b} />);
+    case "memberlist": return wrap(<MembersBlock b={b} />);
+    case "confirmed":  return wrap(<Confirmed b={b} />);
     default: break;
   }
 
