@@ -157,6 +157,9 @@ export const BLOCKS = {
     fields: [
       { key: "src", type: "image", label: "Imagem ou GIF" },
       { key: "caption", type: "text", label: "Legenda" },
+      { key: "width", type: "number", label: "Largura (%)", min: 10, max: 100 },
+      { key: "position", type: "select", label: "Posição", options: [
+        { v: "left", l: "Esquerda" }, { v: "center", l: "Centro" }, { v: "right", l: "Direita" } ] },
       { key: "radius", type: "number", label: "Cantos (px)", min: 0, max: 30 },
       { key: "full", type: "toggle", label: "Largura total" },
     ],
@@ -222,6 +225,11 @@ export const BLOCKS = {
       { key: "items", type: "list", label: "Cards", addLabel: "Adicionar card",
         titleKey: "title", item: [
           { key: "image", type: "image", label: "Imagem / ícone" },
+          { key: "imgH", type: "number", label: "Altura da imagem (px, 0 = auto)", min: 0, max: 480 },
+          { key: "imgFit", type: "select", label: "Ajuste da imagem", options: [
+            { v: "cover", l: "Preencher (corta)" }, { v: "contain", l: "Conter (inteira)" } ] },
+          { key: "imgPos", type: "select", label: "Posição da imagem", options: [
+            { v: "center", l: "Centro" }, { v: "top", l: "Topo" }, { v: "bottom", l: "Base" } ] },
           { key: "title", type: "text", label: "Título" },
           { key: "text", type: "richtext", label: "Texto" },
           { key: "badge", type: "text", label: "Etiqueta" },
@@ -312,6 +320,7 @@ export const BLOCKS = {
       { key: "items", type: "list", label: "Recursos", addLabel: "Adicionar recurso",
         titleKey: "name", item: [
           { key: "icon", type: "image", label: "Ícone" },
+          { key: "iconSize", type: "number", label: "Tamanho do ícone (px)", min: 14, max: 120 },
           { key: "name", type: "text", label: "Nome" },
           { key: "amount", type: "text", label: "Quantidade" },
           { key: "color", type: "color", label: "Cor" },
@@ -497,18 +506,23 @@ export const BLOCKS = {
   marches: {
     label: "Marchas / Esquadrões", group: "Batalha",
     defaults: { label: "Your marches", items: [{ title: "March 1", text: "Seus melhores heróis" }],
-      noteIcons: [], note: "", warnImage: "", warnText: "" },
+      notes: [] },
     fields: [
       { key: "items", type: "list", label: "Marchas", addLabel: "Adicionar marcha", titleKey: "title", item: [
         { key: "title", type: "text", label: "Título" },
         { key: "text", type: "text", label: "Descrição" },
       ] },
-      { key: "noteIcons", type: "list", label: "Ícones da nota", addLabel: "Adicionar ícone", titleKey: "src", item: [
-        { key: "src", type: "image", label: "Ícone" },
+      { key: "notes", type: "list", label: "Notas (quantas quiser)", addLabel: "Adicionar nota", titleKey: "text", item: [
+        { key: "variant", type: "select", label: "Estilo", options: [
+          { v: "note", l: "Nota" }, { v: "warn", l: "Aviso (laranja)" } ] },
+        { key: "image", type: "image", label: "Imagem lateral" },
+        { key: "imageSize", type: "number", label: "Tamanho da imagem (px)", min: 16, max: 120 },
+        { key: "icons", type: "list", label: "Ícones", addLabel: "Adicionar ícone", titleKey: "src", item: [
+          { key: "src", type: "image", label: "Ícone" },
+          { key: "size", type: "number", label: "Tamanho (px)", min: 12, max: 90 },
+        ] },
+        { key: "text", type: "richtext", label: "Texto" },
       ] },
-      { key: "note", type: "richtext", label: "Nota" },
-      { key: "warnImage", type: "image", label: "Imagem do aviso" },
-      { key: "warnText", type: "richtext", label: "Texto do aviso" },
     ],
   },
 };

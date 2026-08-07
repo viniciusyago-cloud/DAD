@@ -212,7 +212,9 @@ export default function BlockView({ b }) {
         <figure className={b.full ? "fig full" : "fig"}>
           {imgSrc(b.src)
             ? <Pic v={b.src} alt={b.caption || ""}
-                   style={{ display: "block", width: "100%", borderRadius: b.radius ?? 12 }} />
+                   style={{ display: "block", width: `${b.width || 100}%`, borderRadius: b.radius ?? 12,
+                            marginLeft: b.position === "center" ? "auto" : b.position === "right" ? "auto" : 0,
+                            marginRight: b.position === "center" ? "auto" : 0 }} />
             : <div className="ph">No image</div>}
           {b.caption && <figcaption>{b.caption}</figcaption>}
         </figure>,
@@ -254,7 +256,9 @@ export default function BlockView({ b }) {
         <div className="grid" style={{ "--c": b.cols || 3 }}>
           {(b.items || []).map((it, i) => (
             <div className="kpi" key={i} style={{ "--k": it.color || A }}>
-              {imgSrc(it.icon) && <Pic v={it.icon} alt="" />}
+              {imgSrc(it.icon) && <Pic v={it.icon} alt=""
+                style={{ width: it.iconSize || 24, height: it.iconSize || 24, objectFit: "contain", marginBottom: 6 }}
+                imgStyle={{ objectFit: "contain" }} />}
               <div className="kpi-v">{it.value}</div>
               <div className="kpi-l">{it.label}</div>
             </div>
@@ -268,7 +272,10 @@ export default function BlockView({ b }) {
           {(b.items || []).map((it, i) => {
             const inner = (
               <>
-                {imgSrc(it.image) && <Pic v={it.image} className="card-img" alt="" />}
+                {imgSrc(it.image) && <Pic v={it.image} className="card-img" alt=""
+                  fit={it.imgH ? "cover" : "auto"}
+                  style={it.imgH ? { height: it.imgH, width: "100%", aspectRatio: "auto" } : undefined}
+                  imgStyle={{ objectFit: it.imgFit || "cover", objectPosition: it.imgPos || "center" }} />}
                 <div className="card-bd">
                   {it.badge && <span className="card-badge" style={{ "--k": it.color || A }}>{it.badge}</span>}
                   {it.title && <div className="card-t">{it.title}</div>}
@@ -355,7 +362,9 @@ export default function BlockView({ b }) {
         <div className="grid" style={{ "--c": b.cols || 4 }}>
           {(b.items || []).map((r, i) => (
             <div className="res" key={i} style={{ "--k": r.color || A }}>
-              {imgSrc(r.icon) ? <Pic v={r.icon} alt="" /> : <div className="res-ph" />}
+              {imgSrc(r.icon) ? <Pic v={r.icon} alt=""
+                style={{ width: r.iconSize || 28, height: r.iconSize || 28, objectFit: "contain" }}
+                imgStyle={{ objectFit: "contain" }} /> : <div className="res-ph" />}
               <div className="res-a">{r.amount}</div>
               <div className="res-n">{r.name}</div>
             </div>

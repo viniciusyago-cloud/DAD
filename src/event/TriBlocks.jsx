@@ -375,6 +375,11 @@ export function Rules({ b }) {
 
 /* ---------- marches / squads ---------- */
 export function Marches({ b }) {
+  // Legacy shape (single note + warn) folds into the notes list
+  const notes = (b.notes && b.notes.length ? b.notes : [
+    ...(b.note || b.noteIcons?.length ? [{ variant: "note", icons: (b.noteIcons || []), text: b.note || "" }] : []),
+    ...(b.warnText ? [{ variant: "warn", image: b.warnImage, imageSize: 46, icons: [], text: b.warnText }] : []),
+  ]);
   return (
     <>
       <div className="ta-squads">
@@ -382,20 +387,25 @@ export function Marches({ b }) {
           <div key={i} className={`ta-squad${i === 0 ? " s1" : ""}`}><b>{s.title}</b><span>{s.text}</span></div>
         ))}
       </div>
-      {(b.noteIcons?.length > 0 || b.note) && (
-        <div className="ta-locked">
-          {b.noteIcons?.length > 0 && (
-            <div className="ta-locked-icons">{b.noteIcons.map((n, i) => imgSrc(n.src) && <Pic key={i} v={n.src} alt="" />)}</div>
+      {notes.map((n, i) => n.variant === "warn" ? (
+        <div className="ta-avoid" key={i}>
+          {imgSrc(n.image) && <Pic v={n.image} className="ta-avoid-img" alt=""
+            style={n.imageSize ? { width: n.imageSize, height: n.imageSize } : undefined} />}
+          <div><Rich>{n.text}</Rich></div>
+        </div>
+      ) : (
+        <div className="ta-locked" key={i}>
+          {(n.icons || []).length > 0 && (
+            <div className="ta-locked-icons">
+              {n.icons.map((ic, j) => imgSrc(ic.src) && <Pic key={j} v={ic.src} alt=""
+                style={ic.size ? { width: ic.size, height: ic.size } : undefined} />)}
+            </div>
           )}
-          {b.note && <div className="ta-p"><Rich>{b.note}</Rich></div>}
+          {imgSrc(n.image) && !(n.icons || []).length && <Pic v={n.image} alt=""
+            style={{ width: n.imageSize || 46, height: n.imageSize || 46, objectFit: "contain" }} />}
+          {n.text && <div className="ta-p"><Rich>{n.text}</Rich></div>}
         </div>
-      )}
-      {b.warnText && (
-        <div className="ta-avoid">
-          {imgSrc(b.warnImage) && <Pic v={b.warnImage} className="ta-avoid-img" alt="" />}
-          <div><Rich>{b.warnText}</Rich></div>
-        </div>
-      )}
+      ))}
     </>
   );
 }

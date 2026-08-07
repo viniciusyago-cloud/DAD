@@ -184,3 +184,6 @@
   box-shadow: 0 -1px 0 var(--edge); }
 .al-hint { font-size: 10.5px; color: var(--ink-mute); }
 .f-btn-lib { color: var(--gold-lt); }
+
+/* annotated-image wrappers behave like the img they replace */
+span.pic { width: 100%; }  /* low specificity — any context rule overrides */

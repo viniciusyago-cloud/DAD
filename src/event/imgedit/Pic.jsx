@@ -70,13 +70,15 @@ function Layer({ l, W, H }) {
     case "pin": {
       const r = l.size || 14;
       return (
-        <g className={`an-l${cls}`} style={st} transform={`translate(${X(l.x)} ${Y(l.y)})`}>
-          <circle r={r + 4} fill="#0d1218" opacity="0.55" />
-          <circle r={r} fill={c} stroke="#0d1218" strokeWidth="2.5" />
-          {l.label ? (
-            <text y={r * 0.36} textAnchor="middle" fill="#0d1218"
-                  style={{ font: `800 ${r * 1.05}px system-ui, sans-serif` }}>{l.label}</text>
-          ) : null}
+        <g transform={`translate(${X(l.x)} ${Y(l.y)})`}>
+          <g className={`an-l${cls}`} style={st}>
+            <circle r={r + 4} fill="#0d1218" opacity="0.55" />
+            <circle r={r} fill={c} stroke="#0d1218" strokeWidth="2.5" />
+            {l.label ? (
+              <text y={r * 0.36} textAnchor="middle" fill="#0d1218"
+                    style={{ font: `800 ${r * 1.05}px system-ui, sans-serif` }}>{l.label}</text>
+            ) : null}
+          </g>
         </g>
       );
     }
@@ -151,7 +153,7 @@ function Layer({ l, W, H }) {
    fit="auto"  → block element, keeps the cropped aspect ratio (default)
    fit="fill"  → absolutely fills a sized parent (avatars, icon boxes)
    fit="cover" → fills the parent box, cropping to it                     */
-export default function Pic({ v, className, style, alt = "", fit = "auto", loading }) {
+export default function Pic({ v, className, style, alt = "", fit = "auto", loading, imgStyle }) {
   const { src, crop, layers } = normImg(v);
   const needsBox = !!(crop || layers.length);
   const nat = useNatural(src, needsBox);
@@ -159,7 +161,7 @@ export default function Pic({ v, className, style, alt = "", fit = "auto", loadi
 
   // Plain image: nothing to overlay, so don't disturb the surrounding layout.
   if (!needsBox || !nat) {
-    return <img className={className} style={style} src={src} alt={alt} loading={loading} />;
+    return <img className={className ? `pic ${className}` : "pic"} style={style} src={src} alt={alt} loading={loading} />;
   }
 
   const c = crop || { x: 0, y: 0, w: 1, h: 1 };
@@ -170,10 +172,10 @@ export default function Pic({ v, className, style, alt = "", fit = "auto", loadi
       ? { position: "absolute", inset: 0, overflow: "hidden", ...style }
       : fit === "cover"
         ? { position: "relative", display: "block", width: "100%", height: "100%", overflow: "hidden", ...style }
-        : { position: "relative", display: "block", width: "100%", aspectRatio: `${W} / ${H}`, overflow: "hidden", ...style };
+        : { position: "relative", display: "block", aspectRatio: `${W} / ${H}`, overflow: "hidden", ...style };
 
   return (
-    <span className={className} style={wrap}>
+    <span className={className ? `pic ${className}` : "pic"} style={wrap}>
       <img
         src={src} alt={alt} loading={loading}
         style={{
@@ -181,6 +183,7 @@ export default function Pic({ v, className, style, alt = "", fit = "auto", loadi
           width: `${100 / c.w}%`, height: `${100 / c.h}%`,
           left: `${(-c.x * 100) / c.w}%`, top: `${(-c.y * 100) / c.h}%`,
           objectFit: "cover",
+          ...imgStyle,
         }}
       />
       {layers.length > 0 && (
