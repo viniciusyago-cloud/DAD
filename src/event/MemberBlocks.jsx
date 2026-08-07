@@ -23,7 +23,7 @@ const fmt = (n) => {
 };
 
 /* --- one person's card, honouring the field checkboxes --- */
-function PersonCard({ p, show, confirmed, onConfirm, canConfirm }) {
+function PersonCard({ p, show, confirmed, onConfirm, canConfirm, avatarSize }) {
   if (!p) {
     return (
       <div className="pc pc-empty">
@@ -38,7 +38,7 @@ function PersonCard({ p, show, confirmed, onConfirm, canConfirm }) {
   return (
     <div className={`pc${confirmed ? " ok" : ""}`}>
       {s.avatar && (
-        <div className="pc-av">
+        <div className="pc-av" style={avatarSize ? { width: avatarSize, height: avatarSize } : undefined}>
           {imgSrc(p.avatar) || p.avatar
             ? <Pic v={avatarSrc(p.avatar)} fit="fill" alt="" />
             : <span>{(p.name || "?").slice(0, 1)}</span>}
@@ -102,7 +102,7 @@ export function Lineup({ b }) {
 
       <div className={(b.cols || 1) > 1 ? "grid" : "stack"} style={{ "--c": b.cols || 1 }}>
         {people.map((p, i) => (
-          <PersonCard key={i} p={p} show={b.show}
+          <PersonCard key={i} p={p} show={b.show} avatarSize={b.avatarSize}
                       confirmed={p ? has(b.id, p.key) : false}
                       canConfirm={!!b.askConfirm && !!p && !preview}
                       onConfirm={() => p && toggle(b.id, p)} />
@@ -121,7 +121,7 @@ export function MembersBlock({ b }) {
 
   return (
     <div className={(b.cols || 2) > 1 ? "grid" : "stack"} style={{ "--c": b.cols || 2 }}>
-      {people.map((p, i) => <PersonCard key={i} p={p} show={b.show} />)}
+      {people.map((p, i) => <PersonCard key={i} p={p} show={b.show} avatarSize={b.avatarSize} />)}
       {people.length === 0 && <div className="ph">Nenhum membro selecionado</div>}
     </div>
   );

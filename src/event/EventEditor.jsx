@@ -265,7 +265,9 @@ export default function EventEditor() {
               </div>
             )}
             <div className="ev-insp-b">
-              {(tab === "style" && !schema?.raw ? STYLE_FIELDS : contentFields).map((f) => (
+              {(tab === "style" && !schema?.raw
+                ? [...STYLE_FIELDS, ...(schema.styleFields || [])]
+                : contentFields).map((f) => (
                 <Field key={f.key || `h-${f.label}`} field={f} value={current[f.key]}
                        onChange={(v) => patch(current.id, { [f.key]: v })} />
               ))}

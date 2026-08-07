@@ -341,7 +341,8 @@ export function Buildings({ b }) {
       <div className="ta-blds">
         {(b.items || []).map((x, i) => (
           <div key={i} className={`ta-bld${x.hot ? " hot" : ""}`}>
-            {imgSrc(x.img) && <Pic v={x.img} alt={x.name} loading="lazy" />}
+            {imgSrc(x.img) && <Pic v={x.img} alt={x.name} loading="lazy"
+              style={(x.imgW || x.imgH) ? { width: x.imgW || undefined, height: x.imgH || undefined } : undefined} />}
             <div className="ta-bld-body">
               <div className="ta-bld-top"><b>{x.name}</b>{x.pts && <span className="ta-bld-pts">{x.pts}</span>}</div>
               {x.codes && <div className="ta-bld-codes">{x.codes}</div>}
@@ -363,7 +364,7 @@ export function Rules({ b }) {
           const Ic = ICONS[r.icon] || ICONS.star;
           return (
             <div key={i} className="ta-rule">
-              <span className="ta-rule-ic">{imgSrc(r.image) ? <Pic v={r.image} alt="" style={{ width: 20, height: 20 }} /> : <Ic size={18} />}</span>
+              <span className="ta-rule-ic">{imgSrc(r.image) ? <Pic v={r.image} alt="" style={{ width: r.imgSize || 20, height: r.imgSize || 20 }} /> : <Ic size={18} />}</span>
               <div><b>{r.title}</b><p>{r.text}</p></div>
             </div>
           );

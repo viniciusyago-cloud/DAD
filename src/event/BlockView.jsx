@@ -123,6 +123,20 @@ function chrome(b) {
   return { cls: cls.join(" "), style, A };
 }
 
+/** CSS for one named text line configured via textStyle(prefix). */
+export function lineStyle(b, p, fallback = {}) {
+  const v = (k) => b[`${p}${k}`];
+  return {
+    color: v("Color") || fallback.color,
+    fontFamily: v("Font") ? FONT_STACK[v("Font")] : fallback.fontFamily,
+    fontSize: v("Size") ? `${v("Size")}px` : fallback.fontSize,
+    fontWeight: v("Weight") || fallback.fontWeight,
+    textTransform: v("Case") === "upper" ? "uppercase" : v("Case") === "none" ? "none" : fallback.textTransform,
+    letterSpacing: v("Track") != null && v("Track") !== "" ? `${v("Track") / 100}em` : fallback.letterSpacing,
+    textAlign: v("Align") || fallback.textAlign,
+  };
+}
+
 function Title({ b }) {
   const text = b._title || b.label || "";
   if (!text && !imgSrc(b._titleIcon)) return null;
@@ -137,7 +151,8 @@ function Title({ b }) {
   };
   return (
     <div className={`blk-title${b._titleRule ? " has-rule" : ""}`} style={st}>
-      {imgSrc(b._titleIcon) && <Pic v={b._titleIcon} alt="" />}
+      {imgSrc(b._titleIcon) && <Pic v={b._titleIcon} alt=""
+        style={b._titleIconSize ? { width: b._titleIconSize, height: b._titleIconSize } : undefined} />}
       {text && <span>{text}</span>}
     </div>
   );
@@ -185,20 +200,37 @@ export default function BlockView({ b }) {
   }
 
   switch (b.type) {
-    case "hero":
+    case "hero": {
+      const vpos = b.hVAlign === "top" ? "flex-start" : b.hVAlign === "center" ? "center" : "flex-end";
       return (
         <section ref={ref} className={`${cls}${animCls} blk-hero`}
-                 style={{ ...style, minHeight: b.height || 280 }}>
+                 style={{ ...style, minHeight: b.height || 280, alignItems: vpos }}>
           {imgSrc(b.image) && <Pic v={b.image} className="hero-bg" fit="fill" alt="" />}
           <div className="hero-scrim" style={{ opacity: (b.overlay ?? 60) / 100 }} />
           <div className="blk-in hero-in">
             <Title b={b} />
-            {b.eyebrow && <div className="hero-eyebrow">{b.eyebrow}</div>}
-            {b.title && <h1 className="hero-title metal">{b.title}</h1>}
-            {b.subtitle && <div className="hero-sub">{b.subtitle}</div>}
+            {b.eyebrow && (
+              <div className="hero-eyebrow"
+                   style={lineStyle(b, "hEyebrow", { textAlign: b._align === "center" ? "center" : "left" })}>
+                {b.eyebrow}
+              </div>
+            )}
+            {b.title && (
+              <h1 className={`hero-title${b.hTitleMetal === false ? "" : " metal"}`}
+                  style={lineStyle(b, "hTitle", { textAlign: b._align === "center" ? "center" : "left" })}>
+                {b.title}
+              </h1>
+            )}
+            {b.subtitle && (
+              <div className="hero-sub"
+                   style={lineStyle(b, "hSub", { textAlign: b._align === "center" ? "center" : "left" })}>
+                {b.subtitle}
+              </div>
+            )}
           </div>
         </section>
       );
+    }
 
     case "heading": {
       const T = b.level === "h1" ? "h1" : b.level === "h3" ? "h3" : "h2";
@@ -233,7 +265,11 @@ export default function BlockView({ b }) {
           {(b.items || []).map((it, i) => (
             <figure className="fig" key={i}>
               {imgSrc(it.src)
-                ? <Pic v={it.src} alt={it.caption || ""} style={{ display: "block", width: "100%", borderRadius: 10 }} />
+                ? <Pic v={it.src} alt={it.caption || ""}
+                       fit={it.h ? "cover" : "auto"}
+                       style={{ display: "block", width: "100%", borderRadius: 10,
+                                ...(it.h ? { height: it.h, aspectRatio: "auto" } : null) }}
+                       imgStyle={{ objectFit: it.fit || "cover" }} />
                 : <div className="ph">Image</div>}
               {it.caption && <figcaption>{it.caption}</figcaption>}
             </figure>
@@ -305,7 +341,9 @@ export default function BlockView({ b }) {
         <div className="teams">
           {(b.items || []).map((t, i) => (
             <div className="team" key={i} style={{ "--k": t.color || A }}>
-              <div className="team-logo">{imgSrc(t.logo) ? <Pic v={t.logo} fit="fill" alt="" /> : (t.tag || t.name || "?").slice(0, 3)}</div>
+              <div className="team-logo" style={t.logoSize ? { width: t.logoSize, height: t.logoSize } : undefined}>
+              {imgSrc(t.logo) ? <Pic v={t.logo} fit="fill" alt="" /> : (t.tag || t.name || "?").slice(0, 3)}
+            </div>
               <div className="team-bd">
                 <div className="team-n">{t.name}{t.tag && <span className="team-tag">{t.tag}</span>}</div>
                 {t.note && <div className="team-note">{t.note}</div>}
@@ -321,7 +359,9 @@ export default function BlockView({ b }) {
         <div className="grid" style={{ "--c": b.cols || 2 }}>
           {(b.items || []).map((m, i) => (
             <div className="mem" key={i}>
-              <div className="mem-av">{imgSrc(m.avatar) ? <Pic v={m.avatar} fit="fill" alt="" /> : (m.name || "?").slice(0, 1)}</div>
+              <div className="mem-av" style={b.avatarSize ? { width: b.avatarSize, height: b.avatarSize } : undefined}>
+                {imgSrc(m.avatar) ? <Pic v={m.avatar} fit="fill" alt="" /> : (m.name || "?").slice(0, 1)}
+              </div>
               <div className="mem-bd">
                 <div className="mem-n">{m.name}</div>
                 {m.role && <div className="mem-r">{m.role}</div>}
@@ -357,7 +397,7 @@ export default function BlockView({ b }) {
                 {it.title && <div className="step-t">{it.title}</div>}
                 {it.text && <div className="rich sz-sm"><Rich>{it.text}</Rich></div>}
                 {imgSrc(it.image) && <Pic v={it.image} className="step-img" alt=""
-                    style={{ display: "block", width: "100%", marginTop: 8, borderRadius: 10 }} />}
+                    style={{ display: "block", width: `${it.imgW || 100}%`, marginTop: 8, borderRadius: 10 }} />}
               </div>
             </div>
           ))}
@@ -432,7 +472,7 @@ export default function BlockView({ b }) {
               <div className="squad-hs">
                 {(sq.heroes || []).map((h, j) => (
                   <div className="hero" key={j}>
-                    <div className="hero-av">
+                    <div className="hero-av" style={b.heroSize ? { width: b.heroSize, height: b.heroSize } : undefined}>
                       {imgSrc(h.icon) ? <Pic v={h.icon} fit="fill" alt="" /> : <span>{(h.name || "?").slice(0, 1)}</span>}
                     </div>
                     {h.name && <div className="hero-n">{h.name}</div>}

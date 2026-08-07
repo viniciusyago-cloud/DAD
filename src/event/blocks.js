@@ -41,9 +41,25 @@ export const FRAMES = [
   { v: "dashed", l: "Tracejada" }, { v: "left", l: "Barra lateral" },
 ];
 
+/** Typography controls for one named line of text inside a block. */
+export const textStyle = (p, label) => [
+  { type: "heading", label },
+  { key: `${p}Color`, type: "color", label: "Cor" },
+  { key: `${p}Font`, type: "select", label: "Fonte", options: FONTS },
+  { key: `${p}Size`, type: "number", label: "Tamanho (px)", min: 8, max: 90 },
+  { key: `${p}Weight`, type: "select", label: "Peso", options: [
+    { v: 400, l: "Normal" }, { v: 700, l: "Negrito" }, { v: 800, l: "Extra" } ] },
+  { key: `${p}Case`, type: "select", label: "Caixa", options: [
+    { v: "none", l: "Normal" }, { v: "upper", l: "MAIÚSCULAS" } ] },
+  { key: `${p}Track`, type: "number", label: "Espaçamento entre letras (0-40)", min: 0, max: 40 },
+  { key: `${p}Align`, type: "select", label: "Alinhamento", options: [
+    { v: "left", l: "Esquerda" }, { v: "center", l: "Centro" }, { v: "right", l: "Direita" } ] },
+];
+
 export const STYLE_FIELDS = [
-  { type: "heading", label: "Título" },
+  { type: "heading", label: "Título da seção" },
   { key: "_titleIcon", type: "image", label: "Ícone do título" },
+  { key: "_titleIconSize", type: "number", label: "Tamanho do ícone (px)", min: 10, max: 90 },
   { key: "_titleColor", type: "color", label: "Cor do título" },
   { key: "_titleFont", type: "select", label: "Fonte", options: FONTS },
   { key: "_titleSize", type: "number", label: "Tamanho (px)", min: 9, max: 46 },
@@ -108,8 +124,18 @@ export const BLOCKS = {
   /* ---------------- Structure ---------------- */
   hero: {
     label: "Capa / Hero", group: "Estrutura", icon: "image",
+    styleFields: [
+      ...textStyle("hTitle", "Título do hero"),
+      { key: "hTitleMetal", type: "toggle", label: "Dourado metálico" },
+      ...textStyle("hEyebrow", "Linha superior"),
+      ...textStyle("hSub", "Subtítulo"),
+      { type: "heading", label: "Posição do texto" },
+      { key: "hVAlign", type: "select", label: "Vertical", options: [
+        { v: "bottom", l: "Embaixo" }, { v: "center", l: "Meio" }, { v: "top", l: "Em cima" } ] },
+    ],
     defaults: { ...baseStyle, _align: "center", image: "", eyebrow: "Tri-Alliance", title: "Nome do evento",
-      subtitle: "Uma linha curta de apoio", height: 280, overlay: 60 },
+      subtitle: "Uma linha curta de apoio", height: 280, overlay: 60,
+      hTitleMetal: true, hTitleAlign: "left", hEyebrowAlign: "left", hSubAlign: "left", hVAlign: "bottom" },
     fields: [
       { key: "image", type: "image", label: "Imagem de fundo" },
       { key: "eyebrow", type: "text", label: "Linha superior" },
@@ -173,6 +199,9 @@ export const BLOCKS = {
       { key: "items", type: "list", label: "Imagens", addLabel: "Adicionar imagem",
         titleKey: "caption", item: [
           { key: "src", type: "image", label: "Imagem" },
+          { key: "h", type: "number", label: "Altura (px, 0 = automática)", min: 0, max: 480 },
+          { key: "fit", type: "select", label: "Ajuste", options: [
+            { v: "cover", l: "Preencher (corta)" }, { v: "contain", l: "Conter (inteira)" } ] },
           { key: "caption", type: "text", label: "Legenda" },
         ] },
     ],
@@ -253,6 +282,7 @@ export const BLOCKS = {
       { key: "items", type: "list", label: "Equipes", addLabel: "Adicionar equipe",
         titleKey: "name", item: [
           { key: "logo", type: "image", label: "Emblema" },
+          { key: "logoSize", type: "number", label: "Tamanho do emblema (px)", min: 20, max: 120 },
           { key: "name", type: "text", label: "Nome" },
           { key: "tag", type: "text", label: "Tag" },
           { key: "score", type: "text", label: "Pontuação" },
@@ -263,12 +293,13 @@ export const BLOCKS = {
   },
   roster: {
     label: "Lista de pessoas (livre)", group: "Evento", icon: "users",
-    defaults: { ...baseStyle, cols: 2, items: [
+    defaults: { ...baseStyle, cols: 2, avatarSize: 38, items: [
       { avatar: "", name: "Nome do jogador", role: "Função", note: "" },
     ] },
     fields: [
       { key: "cols", type: "select", label: "Colunas", options: [
         { v: 1, l: "1" }, { v: 2, l: "2" }, { v: 3, l: "3" } ] },
+      { key: "avatarSize", type: "number", label: "Tamanho do avatar (px)", min: 20, max: 120 },
       { key: "items", type: "list", label: "Membros", addLabel: "Adicionar membro",
         titleKey: "name", item: [
           { key: "avatar", type: "image", label: "Avatar" },
@@ -304,6 +335,7 @@ export const BLOCKS = {
       { key: "items", type: "list", label: "Passos", addLabel: "Adicionar passo",
         titleKey: "title", item: [
           { key: "image", type: "image", label: "Imagem / GIF" },
+          { key: "imgW", type: "number", label: "Largura da imagem (%)", min: 10, max: 100 },
           { key: "title", type: "text", label: "Título" },
           { key: "text", type: "richtext", label: "Explicação" },
         ] },
@@ -382,6 +414,8 @@ export const BLOCKS = {
       { key: "askConfirm", type: "toggle", label: "Pedir confirmação de participação" },
       { key: "cols", type: "select", label: "Colunas", options: [
         { v: 1, l: "1" }, { v: 2, l: "2" } ] },
+      { key: "avatarSize", type: "number", label: "Tamanho do avatar (px)", min: 24, max: 120 },
+      { key: "avatarSize", type: "number", label: "Tamanho do avatar (px)", min: 24, max: 120 },
       { key: "show", type: "checks", label: "O que mostrar de cada jogador" },
       { key: "picks", type: "members", label: "Quem está escalado" },
     ],
@@ -417,6 +451,7 @@ export const BLOCKS = {
     fields: [
       { key: "cols", type: "select", label: "Colunas", options: [
         { v: 1, l: "1" }, { v: 2, l: "2" } ] },
+      { key: "heroSize", type: "number", label: "Tamanho dos retratos (px)", min: 28, max: 140 },
       { key: "items", type: "list", label: "Esquadrões", addLabel: "Adicionar esquadrão", titleKey: "title", item: [
         { key: "title", type: "text", label: "Nome do esquadrão" },
         { key: "kind", type: "select", label: "Tipo", options: [
@@ -516,6 +551,8 @@ export const BLOCKS = {
     fields: [
       { key: "items", type: "list", label: "Prédios", addLabel: "Adicionar prédio", titleKey: "name", item: [
         { key: "img", type: "image", label: "Imagem" },
+        { key: "imgW", type: "number", label: "Largura (px)", min: 30, max: 220 },
+        { key: "imgH", type: "number", label: "Altura (px)", min: 30, max: 220 },
         { key: "name", type: "text", label: "Nome" },
         { key: "codes", type: "text", label: "Códigos / quando abre" },
         { key: "pts", type: "text", label: "Pontos" },
@@ -535,6 +572,7 @@ export const BLOCKS = {
           { v: "chat", l: "Chat" }, { v: "flag", l: "Bandeira" }, { v: "sword", l: "Espada" },
           { v: "shield", l: "Escudo" }, { v: "clock", l: "Relógio" }, { v: "star", l: "Estrela" } ] },
         { key: "image", type: "image", label: "Ou uma imagem (substitui o ícone)" },
+        { key: "imgSize", type: "number", label: "Tamanho do ícone (px)", min: 12, max: 90 },
         { key: "title", type: "text", label: "Título" },
         { key: "text", type: "textarea", label: "Descrição" },
       ] },
