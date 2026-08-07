@@ -1,21 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { supabase } from "../supabaseClient.js";
 
 /* ============================================================
-   Alliance menu. The two built-in pages are always there; every
-   page created in the builder joins them automatically once it
-   is marked "show in menu".
+   Alliance menu. Troops Intel is always first; every page created
+   in the builder joins it automatically once it is marked
+   "show in menu". Page management lives at /paginas — reachable
+   only by typing the address, so it stays out of players' way.
    ============================================================ */
 
 const BUILT_IN = [
   { to: "/", label: "Troops Intel", end: true },
-  { to: "/tri-alliance", label: "Tri-Alliance" },
 ];
 
 export default function NavBar() {
   const [pages, setPages] = useState([]);
-  const { pathname } = useLocation();
 
   useEffect(() => {
     let alive = true;
@@ -36,7 +35,6 @@ export default function NavBar() {
   }, []);
 
   const cls = ({ isActive }) => `nav-chip${isActive ? " on" : ""}`;
-  const editing = pathname.endsWith("/editar");
 
   return (
     <nav className="topnav">
@@ -48,8 +46,6 @@ export default function NavBar() {
           {p.nav_label || p.title || p.slug}
         </NavLink>
       ))}
-      <NavLink to="/paginas" className={({ isActive }) => `nav-chip nav-manage${isActive || editing ? " on" : ""}`}
-               title="Páginas e edição">+</NavLink>
     </nav>
   );
 }

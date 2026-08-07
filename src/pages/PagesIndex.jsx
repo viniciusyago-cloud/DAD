@@ -99,11 +99,6 @@ export default function PagesIndex() {
           <div className="pi-info"><b>Troops Intel</b><code>/</code></div>
           <span className="pi-tag">fixa</span>
         </div>
-        <div className="pi-row pi-fixed">
-          <div className="pi-info"><b>Tri-Alliance</b><code>/tri-alliance</code></div>
-          <span className="pi-tag">fixa</span>
-        </div>
-
         {loading && <div className="ie-none">Carregando…</div>}
         {pages.map((p, i) => (
           <div className="pi-row" key={p.id}>

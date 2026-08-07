@@ -182,10 +182,12 @@ export default function BlockView({ b }) {
   switch (b.type) {
     case "hero":
       return (
-        <section className={`blk blk-hero al-${b._align || "center"}`} style={{ ...style, height: b.height || 280 }}>
+        <section ref={ref} className={`${cls}${animCls} blk-hero`}
+                 style={{ ...style, minHeight: b.height || 280 }}>
           {imgSrc(b.image) && <Pic v={b.image} className="hero-bg" fit="fill" alt="" />}
           <div className="hero-scrim" style={{ opacity: (b.overlay ?? 60) / 100 }} />
-          <div className="hero-in">
+          <div className="blk-in hero-in">
+            <Title b={b} />
             {b.eyebrow && <div className="hero-eyebrow">{b.eyebrow}</div>}
             {b.title && <h1 className="hero-title metal">{b.title}</h1>}
             {b.subtitle && <div className="hero-sub">{b.subtitle}</div>}

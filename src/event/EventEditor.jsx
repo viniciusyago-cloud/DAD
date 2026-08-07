@@ -11,6 +11,8 @@ import Field from "./Fields.jsx";
    Blocks can nest via container blocks (children[]).
    ============================================================ */
 
+const RESERVED_SLUGS = ["paginas", "dados", "editar", "tri-alliance", "e", "p", "evento"];
+
 const uid = (p = "t") => `${p}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 const normalize = (doc) => {
@@ -62,7 +64,10 @@ export default function EventEditor() {
         if (data) { setPageId(data.id); setTitle(data.title || ""); setNewSlug(data.slug);
           setNavLabel(data.nav_label || data.title || ""); setInNav(data.in_nav !== false);
           setDoc(normalize(data.doc)); }
-        else {
+        else if (RESERVED_SLUGS.includes(slug)) {
+          setErr(`"${slug}" é um endereço reservado do site — não dá para criar uma página aqui.`);
+          setStatus("error"); return;
+        } else {
           const fresh = normalize(null);
           const { data: made, error: e2 } = await supabase.from("event_pages")
             .insert({ slug, title: "New event", doc: fresh }).select().single();
@@ -177,11 +182,10 @@ export default function EventEditor() {
 
   /* ---- settings: slug + share ---- */
   const publicUrl = `${window.location.origin}/${slug}`;
-  const RESERVED = ["paginas", "dados", "editar", "tri-alliance", "e", "p", "evento"];
   const saveSettings = async () => {
     const s = newSlug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
     if (!s) { alert("Escolha um endereço válido."); return; }
-    if (s !== slug && RESERVED.includes(s)) { alert(`"${s}" é um endereço reservado.`); return; }
+    if (s !== slug && RESERVED_SLUGS.includes(s)) { alert(`"${s}" é um endereço reservado.`); return; }
     const { error } = await supabase.from("event_pages")
       .update({ slug: s, nav_label: navLabel.trim() || title, in_nav: inNav }).eq("id", pageId);
     if (error) { alert("Esse endereço já existe. Escolha outro."); return; }
@@ -313,11 +317,11 @@ export default function EventEditor() {
               <label className="f-lbl" style={{ marginTop: 16 }}>Botão no menu da aliança</label>
               <input className="f-in" value={navLabel} onChange={(e) => setNavLabel(e.target.value)}
                      placeholder="Nome que aparece no menu" />
-              <label className="f f-row" style={{ marginTop: 10 }}>
+              <div className="f f-row" style={{ marginTop: 10 }}>
                 <span className="f-lbl" style={{ marginBottom: 0 }}>Mostrar no menu</span>
                 <button type="button" className={`f-tog${inNav ? " on" : ""}`}
                         onClick={() => setInNav((v) => !v)}><span /></button>
-              </label>
+              </div>
 
               <label className="f-lbl" style={{ marginTop: 16 }}>Link para compartilhar</label>
               <div className="ev-share">

@@ -536,3 +536,15 @@ body .site-foot { position: fixed; }
 
 /* the "+" chip that opens the page manager */
 .nav-chip.nav-manage { font-size: 17px; line-height: 1; padding-left: 13px; padding-right: 13px; }
+
+/* ---- hero now flows through the style system: keep its own inner padding,
+        but let frame/shadow/background choices from the Estilo tab win ---- */
+.blk.blk-hero { padding: 0; display: flex; align-items: flex-end; overflow: hidden; }
+.blk.blk-hero .blk-in { width: 100%; padding: 16px; }
+.blk.blk-hero.bg-none { box-shadow: 0 0 0 1px var(--gold-dk), 0 10px 26px #000a; }
+.blk.blk-hero.bg-none.fr-hair, .blk.blk-hero.bg-none.fr-gold,
+.blk.blk-hero.bg-none.fr-thick, .blk.blk-hero.bg-none.fr-double,
+.blk.blk-hero.bg-none.fr-dashed, .blk.blk-hero.bg-none.fr-left { box-shadow: none; }
+.blk.blk-hero.bg-none.fr-hair  { box-shadow: 0 0 0 1px var(--fr); }
+.blk.blk-hero.bg-none.fr-gold  { box-shadow: 0 0 0 1px var(--fr), inset 0 1px 0 #ffffff14; }
+.blk.blk-hero.bg-none.fr-thick { box-shadow: 0 0 0 2.5px var(--fr); }
