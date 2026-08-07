@@ -1,5 +1,7 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, Suspense, lazy } from "react";
 import { supabase } from "../supabaseClient.js";
+import { flattenToPng } from "./imgedit/flatten.js";
+const ImageEditor = lazy(() => import("./imgedit/ImageEditor.jsx"));
 
 /* ============================================================
    SITE-WIDE ASSET LIBRARY
@@ -44,6 +46,7 @@ export default function AssetPicker({ onPick, onClose, title = "Biblioteca de í
   const [manage, setManage] = useState(false);
   const [err, setErr] = useState("");
   const fileRef = useRef(null);
+  const [editing, setEditing] = useState(null);   // asset being edited
 
   const shown = assets.filter((a) => a.category === cat);
 
@@ -71,6 +74,22 @@ export default function AssetPicker({ onPick, onClose, title = "Biblioteca de í
     if (!url?.trim()) return;
     const name = prompt("Nome do ícone:", "Novo ícone") || "Novo ícone";
     await supabase.from("assets").insert({ name: name.trim(), url: url.trim(), category: cat, sort: 999 });
+  };
+
+  const saveEdited = async (asset, value) => {
+    setBusy(true); setErr("");
+    try {
+      const blob = await flattenToPng(value);
+      const path = `lib/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}.png`;
+      const { error } = await supabase.storage.from("event-assets")
+        .upload(path, blob, { cacheControl: "31536000", contentType: "image/png" });
+      if (error) throw error;
+      const url = supabase.storage.from("event-assets").getPublicUrl(path).data.publicUrl;
+      const { error: e2 } = await supabase.from("assets").update({ url }).eq("id", asset.id);
+      if (e2) throw e2;
+      setEditing(null);
+    } catch (e) { console.error(e); setErr("Não consegui salvar a edição deste ícone."); }
+    finally { setBusy(false); }
   };
 
   const rename = async (a) => {
@@ -122,6 +141,7 @@ export default function AssetPicker({ onPick, onClose, title = "Biblioteca de í
                 <span className="al-name">{a.name}</span>
                 {manage && (
                   <div className="al-acts">
+                    <button onClick={() => setEditing(a)} title="Editar imagem">✧</button>
                     <button onClick={() => rename(a)} title="Renomear">✎</button>
                     <button onClick={() => recat(a)} title="Mudar categoria">⇄</button>
                     <button className="x" onClick={() => remove(a)} title="Excluir">×</button>
@@ -143,6 +163,13 @@ export default function AssetPicker({ onPick, onClose, title = "Biblioteca de í
 
         <input ref={fileRef} type="file" accept="image/*" multiple hidden
                onChange={(e) => { addFiles([...e.target.files]); e.target.value = ""; }} />
+
+        {editing && (
+          <Suspense fallback={null}>
+            <ImageEditor value={editing.url} onClose={() => setEditing(null)}
+                         onSave={(v) => saveEdited(editing, v)} />
+          </Suspense>
+        )}
       </div>
     </div>
   );
