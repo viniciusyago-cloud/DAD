@@ -176,7 +176,9 @@ export const BLOCKS = {
       { v: "glow", l: "Brilho dourado" }, { v: "line", l: "Linha" }, { v: "dots", l: "Pontos" } ] }],
   },
   spacer: {
-    label: "Espaço", group: "Estrutura", icon: "space",
+    /* raw: a spacer is only a gap — it renders no box, so the shared Estilo
+       controls would all be dead. Better no tab than 27 that do nothing. */
+    label: "Espaço", group: "Estrutura", icon: "space", raw: true,
     defaults: { ...baseStyle, height: 32 },
     fields: [{ key: "height", type: "number", label: "Altura (px)", min: 8, max: 200 }],
   },

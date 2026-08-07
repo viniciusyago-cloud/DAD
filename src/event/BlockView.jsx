@@ -182,6 +182,12 @@ export default function BlockView({ b, slot }) {
       return (
         <section ref={ref} className={`${cls}${animCls} blk-hero`}
                  style={{ ...style, minHeight: b.height || 280, alignItems: vpos }}>
+          {imgSrc(b._bgImage) && b._bg === "image" && (
+            <>
+              <Pic v={b._bgImage} className="blk-bgimg" fit="fill" alt="" />
+              <span className="blk-bgdim" style={{ opacity: (b._bgDim ?? 45) / 100 }} />
+            </>
+          )}
           {imgSrc(b.image) && <Pic v={b.image} className="hero-bg" fit="fill" alt="" />}
           <div className="hero-scrim" style={{ opacity: (b.overlay ?? 60) / 100 }} />
           <div className="blk-in hero-in">
