@@ -32,7 +32,10 @@ export const STYLE_FIELDS = [
     { v: "sm", l: "Compacto" }, { v: "md", l: "Normal" }, { v: "lg", l: "Amplo" } ] },
 ];
 
-const baseStyle = { _bg: "none", _accent: "#ecc25a", _align: "left", _pad: "md" };
+const baseStyle = { _bg: "none", _accent: "#ecc25a", _align: "left", _pad: "md", _title: "" };
+
+// Prepended to the content tab of every non-raw block
+export const TITLE_FIELD = { key: "_title", type: "text", label: "Título da seção (opcional)" };
 
 export const BLOCKS = {
   /* ---------------- Structure ---------------- */
@@ -280,7 +283,39 @@ export const BLOCKS = {
     ],
   },
 
+  /* ---------------- Containers ---------------- */
+  group: {
+    label: "Grupo / Seção (aninha blocos)", group: "Estrutura", container: true,
+    defaults: { ...baseStyle, _bg: "panel", _title: "Nova seção", cols: 1, children: [] },
+    fields: [
+      { key: "cols", type: "select", label: "Colunas internas", options: [
+        { v: 1, l: "1" }, { v: 2, l: "2" }, { v: 3, l: "3" } ] },
+    ],
+  },
+
   /* ---------------- Battle (Tri-Alliance) ---------------- */
+  squads: {
+    label: "Esquadrões / Heróis", group: "Batalha",
+    defaults: { ...baseStyle, _bg: "panel", _title: "Formations", cols: 1, items: [
+      { title: "Attack squad 1", kind: "attack", note: "", heroes: [{ icon: "", name: "" }] },
+    ] },
+    fields: [
+      { key: "cols", type: "select", label: "Colunas", options: [
+        { v: 1, l: "1" }, { v: 2, l: "2" } ] },
+      { key: "items", type: "list", label: "Esquadrões", addLabel: "Adicionar esquadrão", titleKey: "title", item: [
+        { key: "title", type: "text", label: "Nome do esquadrão" },
+        { key: "kind", type: "select", label: "Tipo", options: [
+          { v: "attack", l: "Ataque" }, { v: "defense", l: "Defesa" }, { v: "mixed", l: "Misto" } ] },
+        { key: "note", type: "text", label: "Observação" },
+        { key: "heroes", type: "list", label: "Heróis", addLabel: "Adicionar herói", titleKey: "name", item: [
+          { key: "icon", type: "image", label: "Ícone / retrato" },
+          { key: "name", type: "text", label: "Nome" },
+          { key: "role", type: "text", label: "Papel (opcional)" },
+        ] },
+      ] },
+    ],
+  },
+
   battlecd: {
     label: "Contagem de batalha", group: "Batalha", raw: true,
     defaults: { label: "Battle starts in", target: "", durationMin: 60,

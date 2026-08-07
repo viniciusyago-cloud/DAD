@@ -50,14 +50,14 @@ function Countdown({ target, label, done }) {
   }, []);
   const end = target ? new Date(target).getTime() : 0;
   const diff = end - now;
-  if (!target || Number.isNaN(end)) return <div className="cd-done">Defina a data do evento</div>;
-  if (diff <= 0) return <div className="cd-done">{done || "Começou!"}</div>;
+  if (!target || Number.isNaN(end)) return <div className="cd-done">Set the event date</div>;
+  if (diff <= 0) return <div className="cd-done">{done || "It has started!"}</div>;
   const s = Math.floor(diff / 1000);
   const parts = [
-    { v: Math.floor(s / 86400), l: "dias" },
-    { v: Math.floor((s % 86400) / 3600), l: "horas" },
+    { v: Math.floor(s / 86400), l: "days" },
+    { v: Math.floor((s % 86400) / 3600), l: "hours" },
     { v: Math.floor((s % 3600) / 60), l: "min" },
-    { v: s % 60, l: "seg" },
+    { v: s % 60, l: "sec" },
   ];
   return (
     <>
@@ -82,7 +82,12 @@ export default function BlockView({ b }) {
   const cls = `blk blk-${b.type} bg-${b._bg || "none"} pad-${b._pad || "md"} al-${b._align || "left"}`;
   const style = { "--a": A };
 
-  const wrap = (inner) => <section className={cls} style={style}>{inner}</section>;
+  const wrap = (inner) => (
+    <section className={cls} style={style}>
+      {b._title ? <div className="lbl blk-title">{b._title}</div> : null}
+      {inner}
+    </section>
+  );
 
   /* specialised battle blocks bring their own markup + styles */
   switch (b.type) {
@@ -131,7 +136,7 @@ export default function BlockView({ b }) {
             ? (hasAnno(b.src)
                 ? <Pic v={b.src} alt={b.caption || ""} style={{ display: "block", width: "100%", borderRadius: b.radius ?? 12 }} />
                 : <img src={imgSrc(b.src)} alt={b.caption || ""} style={{ borderRadius: b.radius ?? 12 }} />)
-            : <div className="ph">Sem imagem</div>}
+            : <div className="ph">No image</div>}
           {b.caption && <figcaption>{b.caption}</figcaption>}
         </figure>,
       );
@@ -145,7 +150,7 @@ export default function BlockView({ b }) {
                 ? (hasAnno(it.src)
                     ? <Pic v={it.src} alt={it.caption || ""} style={{ display: "block", width: "100%", borderRadius: 10 }} />
                     : <img src={imgSrc(it.src)} alt={it.caption || ""} />)
-                : <div className="ph">Imagem</div>}
+                : <div className="ph">Image</div>}
               {it.caption && <figcaption>{it.caption}</figcaption>}
             </figure>
           ))}
@@ -160,7 +165,7 @@ export default function BlockView({ b }) {
                  allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture" allowFullScreen /></div>
            : v ? <div className="embed"><iframe src={`https://player.vimeo.com/video/${v}`} title="video" allowFullScreen /></div>
            : b.url ? <video src={b.url} controls playsInline style={{ width: "100%", borderRadius: 12 }} />
-           : <div className="ph">Cole o link do vídeo</div>}
+           : <div className="ph">Paste a video link</div>}
           {b.caption && <figcaption>{b.caption}</figcaption>}
         </figure>,
       );
@@ -315,7 +320,41 @@ export default function BlockView({ b }) {
            target={b.url ? "_blank" : undefined} rel="noreferrer">{b.label || "Botão"}</a>,
       );
 
+    case "group":
+      return wrap(
+        <div className={(b.cols || 1) > 1 ? "grid" : "stack"} style={{ "--c": b.cols || 1 }}>
+          {(b.children || []).map((ch) => <BlockView key={ch.id} b={ch} />)}
+          {(b.children || []).length === 0 && <div className="ph">Empty section</div>}
+        </div>,
+      );
+
+    case "squads":
+      return wrap(
+        <div className={(b.cols || 1) > 1 ? "grid" : "stack"} style={{ "--c": b.cols || 1 }}>
+          {(b.items || []).map((sq, i) => (
+            <div className={`squad sq-${sq.kind || "mixed"}`} key={i}>
+              <div className="squad-h">
+                <span className="squad-t">{sq.title}</span>
+                <span className="squad-k">{sq.kind === "attack" ? "Attack" : sq.kind === "defense" ? "Defense" : "Mixed"}</span>
+              </div>
+              {sq.note && <div className="squad-n">{sq.note}</div>}
+              <div className="squad-hs">
+                {(sq.heroes || []).map((h, j) => (
+                  <div className="hero" key={j}>
+                    <div className="hero-av">
+                      {imgSrc(h.icon) ? <img src={imgSrc(h.icon)} alt="" /> : <span>{(h.name || "?").slice(0, 1)}</span>}
+                    </div>
+                    {h.name && <div className="hero-n">{h.name}</div>}
+                    {h.role && <div className="hero-r">{h.role}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>,
+      );
+
     default:
-      return wrap(<div className="ph">Bloco desconhecido: {b.type}</div>);
+      return wrap(<div className="ph">Unknown block: {b.type}</div>);
   }
 }

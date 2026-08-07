@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient.js";
 import BlockView from "./BlockView.jsx";
 import { DEFAULT_THEME } from "./blocks.js";
 
 /* ============================================================
-   EVENT PAGE (public) — /evento
+   EVENT PAGE (public) — /e/:slug
    Header blocks, then the tab menu, then the active tab.
+   All player-facing copy is English.
    ============================================================ */
 
-const SLUG = "tri-alliance";
-
 export default function EventPage() {
+  const { slug: slugParam } = useParams();
+  const slug = slugParam || "tri-alliance";
+
   const [doc, setDoc] = useState(null);
   const [state, setState] = useState("loading");
   const [active, setActive] = useState(0);
@@ -19,29 +22,31 @@ export default function EventPage() {
     let mounted = true;
     const load = async () => {
       try {
-        const { data, error } = await supabase.from("event_pages").select("doc").eq("slug", SLUG).maybeSingle();
+        const { data, error } = await supabase.from("event_pages").select("doc, title").eq("slug", slug).maybeSingle();
         if (error) throw error;
         if (!mounted) return;
         const d = data?.doc;
         const header = Array.isArray(d?.header) ? d.header : (Array.isArray(d?.blocks) ? d.blocks : []);
         const tabs = Array.isArray(d?.tabs) ? d.tabs : [];
         if (!header.length && !tabs.some((t) => t.blocks?.length)) { setState("empty"); return; }
-        setDoc({ theme: { ...DEFAULT_THEME, ...(d.theme || {}) }, header, tabs });
+        setDoc({ theme: { ...DEFAULT_THEME, ...(d.theme || {}) }, header, tabs, title: data.title });
         setState("ok");
       } catch (e) { console.error(e); if (mounted) setState("error"); }
     };
     load();
-    const ch = supabase.channel("event-page")
+    const ch = supabase.channel(`event-page-${slug}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "event_pages" }, () => load())
       .subscribe();
     return () => { mounted = false; supabase.removeChannel(ch); };
-  }, []);
+  }, [slug]);
 
-  if (state === "loading") return <div className="ev-state">Carregando…</div>;
-  if (state === "error") return <div className="ev-state err">Não consegui carregar o evento.</div>;
+  useEffect(() => { if (doc?.title) document.title = `${doc.title} · BigDaddys`; }, [doc]);
+
+  if (state === "loading") return <div className="ev-state">Loading…</div>;
+  if (state === "error") return <div className="ev-state err">Couldn’t load this event.</div>;
   if (state === "empty") return (
-    <div className="ev-state">Esta página ainda não foi montada.
-      <div style={{ marginTop: 10, fontSize: 12 }}>Abra <b>/evento/editar</b> para construí-la.</div></div>
+    <div className="ev-state">This page hasn’t been built yet.
+      <div style={{ marginTop: 10, fontSize: 12 }}>Open <b>/e/{slug}/editar</b> to build it.</div></div>
   );
 
   const tabs = doc.tabs.filter((t) => t.blocks?.length);
@@ -62,8 +67,6 @@ export default function EventPage() {
       )}
 
       {cur?.blocks.map((b) => <BlockView key={b.id} b={b} />)}
-
-      <div className="ev-foot">BigDaddys · Alliance Command</div>
     </div>
   );
 }
