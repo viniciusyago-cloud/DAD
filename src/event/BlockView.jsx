@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { BattlePlan, Phases, Buildings, Rules, Marches, HowWeWin, BattleCd } from "./TriBlocks.jsx";
+import { BattlePlan, Phases, Buildings, Rules, Marches, HowWeWin } from "./TriBlocks.jsx";
+import Countdown from "./Countdown.jsx";
+import March from "./March.jsx";
 import Pic, { imgSrc, hasAnno } from "./imgedit/Pic.jsx";
 import { Lineup, MembersBlock, Confirmed } from "./MemberBlocks.jsx";
 
@@ -40,38 +42,6 @@ export function Rich({ children }) {
   });
   if (list) nodes.push(<ul key="ul-last">{list}</ul>);
   return <>{nodes}</>;
-}
-
-/* --- live countdown --- */
-function Countdown({ target, label, done }) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  const end = target ? new Date(target).getTime() : 0;
-  const diff = end - now;
-  if (!target || Number.isNaN(end)) return <div className="cd-done">Set the event date</div>;
-  if (diff <= 0) return <div className="cd-done">{done || "It has started!"}</div>;
-  const s = Math.floor(diff / 1000);
-  const parts = [
-    { v: Math.floor(s / 86400), l: "days" },
-    { v: Math.floor((s % 86400) / 3600), l: "hours" },
-    { v: Math.floor((s % 3600) / 60), l: "min" },
-    { v: s % 60, l: "sec" },
-  ];
-  return (
-    <>
-      {label && <div className="cd-label">{label}</div>}
-      <div className="cd-grid">
-        {parts.map((p) => (
-          <div className="cd-cell" key={p.l}>
-            <b>{String(p.v).padStart(2, "0")}</b><span>{p.l}</span>
-          </div>
-        ))}
-      </div>
-    </>
-  );
 }
 
 const ytId = (u = "") => (/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{6,})/.exec(u) || [])[1];
@@ -160,7 +130,7 @@ function Title({ b }) {
 
 /* --- the renderer --- */
 const PANEL_BY_DEFAULT = new Set(["phases", "buildings", "rules", "marches", "howwewin", "battlecd",
-  "squads", "lineup", "memberlist", "confirmed"]);
+  "squads", "lineup", "memberlist", "confirmed", "march", "countdown"]);
 
 export default function BlockView({ b }) {
   if (PANEL_BY_DEFAULT.has(b.type) && b._bg == null) b = { ...b, _bg: "panel" };
@@ -192,7 +162,9 @@ export default function BlockView({ b }) {
     case "rules":     return wrap(<Rules b={b} />);
     case "marches":   return wrap(<Marches b={b} />);
     case "howwewin":  return wrap(<HowWeWin b={b} />);
-    case "battlecd":  return wrap(<BattleCd b={b} />);
+    case "battlecd":  return wrap(<Countdown b={b} />);
+    case "countdown": return wrap(<Countdown b={b} />);
+    case "march":     return wrap(<March b={b} />);
     case "lineup":     return wrap(<Lineup b={b} />);
     case "memberlist": return wrap(<MembersBlock b={b} />);
     case "confirmed":  return wrap(<Confirmed b={b} />);
@@ -290,9 +262,6 @@ export default function BlockView({ b }) {
         </figure>,
       );
     }
-
-    case "countdown":
-      return wrap(<div className="cd"><Countdown target={b.target} label={b.label} done={b.done} /></div>);
 
     case "kpis":
       return wrap(

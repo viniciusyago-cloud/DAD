@@ -426,31 +426,3 @@ export function HowWeWin({ b }) {
     </>
   );
 }
-
-/* ---------- battle countdown (event style) ---------- */
-export function BattleCd({ b }) {
-  const [now, setNow] = useState(() => Date.now());
-  React.useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
-  const start = b.target ? new Date(b.target).getTime() : 0;
-  const end = start + (Number(b.durationMin) || 60) * 60000;
-  const pad = (n) => String(n).padStart(2, "0");
-  let body;
-  if (!b.target || Number.isNaN(start)) body = <div className="cd-done">Defina a data</div>;
-  else if (now < start) {
-    const s = Math.floor((start - now) / 1000);
-    const cells = [[Math.floor(s / 86400), "Days"], [Math.floor((s % 86400) / 3600), "Hours"],
-                   [Math.floor((s % 3600) / 60), "Min"], [s % 60, "Sec"]];
-    body = (
-      <div className="cd-nums" role="timer">
-        {cells.map(([v, l], i) => (
-          <React.Fragment key={l}>
-            {i > 0 && <div className="cd-sep metal">:</div>}
-            <div className="cd-cell"><div className="cd-v metal">{pad(v)}</div><div className="cd-l">{l}</div></div>
-          </React.Fragment>
-        ))}
-      </div>
-    );
-  } else if (now < end) body = <div className="cd-live">{imgSrc(b.liveIcon) && <Pic v={b.liveIcon} alt="" />}{b.liveText || "BATTLE IN PROGRESS"}</div>;
-  else body = <div className="cd-done">{b.doneText || "Battle completed"}</div>;
-  return <div className="cd">{body}</div>;
-}

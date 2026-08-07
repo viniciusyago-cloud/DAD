@@ -291,7 +291,7 @@ export default function EventEditor() {
                 <div className="ev-grp" key={g}>
                   <div className="ev-grp-t">{g}</div>
                   <div className="ev-grp-l">
-                    {Object.entries(BLOCKS).filter(([, v]) => v.group === g).map(([k, v]) => (
+                    {Object.entries(BLOCKS).filter(([, v]) => v.group === g && !v.hidden).map(([k, v]) => (
                       <button className="ev-pick" key={k} onClick={() => addBlock(k)}>{v.label}</button>
                     ))}
                   </div>

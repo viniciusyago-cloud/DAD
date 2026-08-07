@@ -179,7 +179,7 @@ export const BLOCKS = {
   /* ---------------- Media ---------------- */
   image: {
     label: "Imagem / GIF", group: "Mídia", icon: "image",
-    defaults: { ...baseStyle, src: "", caption: "", radius: 12, full: false },
+    defaults: { ...baseStyle, src: "", caption: "", width: 100, position: "left", radius: 12, full: false },
     fields: [
       { key: "src", type: "image", label: "Imagem ou GIF" },
       { key: "caption", type: "text", label: "Legenda" },
@@ -217,12 +217,45 @@ export const BLOCKS = {
 
   /* ---------------- Event data ---------------- */
   countdown: {
-    label: "Contagem regressiva", group: "Evento", icon: "clock",
-    defaults: { ...baseStyle, _bg: "frame", _align: "center", target: "", label: "Começa em",
-      done: "O evento começou!" },
+    label: "Contagem regressiva", group: "Evento",
+    defaults: { ...baseStyle, _bg: "panel", _align: "center", _title: "Battle starts in",
+      target: "", durationMin: 60,
+      showDays: true, showHours: true, showMin: true, showSec: true,
+      labelDays: "Days", labelHours: "Hours", labelMin: "Min", labelSec: "Sec",
+      liveText: "BATTLE IN PROGRESS", liveIcon: "", doneText: "Battle completed",
+      numMetal: true, numColor: "", numFont: "display", numSize: 30,
+      cell: "panel", sep: "colon", unitSize: 8.5, unitColor: "" },
     fields: [
       { key: "target", type: "datetime", label: "Data e hora do evento" },
-      { key: "done", type: "text", label: "Texto quando chegar a hora" },
+      { key: "durationMin", type: "number", label: "Duração do evento (min)", min: 0, max: 1440 },
+      { type: "heading", label: "Unidades" },
+      { key: "showDays", type: "toggle", label: "Mostrar dias" },
+      { key: "showHours", type: "toggle", label: "Mostrar horas" },
+      { key: "showMin", type: "toggle", label: "Mostrar minutos" },
+      { key: "showSec", type: "toggle", label: "Mostrar segundos" },
+      { key: "labelDays", type: "text", label: "Rótulo dos dias" },
+      { key: "labelHours", type: "text", label: "Rótulo das horas" },
+      { key: "labelMin", type: "text", label: "Rótulo dos minutos" },
+      { key: "labelSec", type: "text", label: "Rótulo dos segundos" },
+      { type: "heading", label: "Mensagens" },
+      { key: "liveText", type: "text", label: "Durante o evento" },
+      { key: "liveIcon", type: "image", label: "Ícone durante o evento" },
+      { key: "doneText", type: "text", label: "Depois do evento" },
+    ],
+    styleFields: [
+      { type: "heading", label: "Números" },
+      { key: "numMetal", type: "toggle", label: "Dourado metálico" },
+      { key: "numColor", type: "color", label: "Cor (se não for metálico)" },
+      { key: "numFont", type: "select", label: "Fonte", options: FONTS },
+      { key: "numSize", type: "number", label: "Tamanho (px)", min: 14, max: 96 },
+      { type: "heading", label: "Caixas e separador" },
+      { key: "cell", type: "select", label: "Estilo das caixas", options: [
+        { v: "panel", l: "Painel" }, { v: "plain", l: "Sem caixa" }, { v: "frame", l: "Moldura dourada" } ] },
+      { key: "sep", type: "select", label: "Separador", options: [
+        { v: "colon", l: "Dois-pontos" }, { v: "dot", l: "Ponto" }, { v: "none", l: "Nenhum" } ] },
+      { type: "heading", label: "Rótulos das unidades" },
+      { key: "unitSize", type: "number", label: "Tamanho (px)", min: 6, max: 24 },
+      { key: "unitColor", type: "color", label: "Cor" },
     ],
   },
   kpis: {
@@ -403,10 +436,47 @@ export const BLOCKS = {
     ],
   },
 
+  march: {
+    label: "Marcha / Esquadrão", group: "Batalha",
+    defaults: { ...baseStyle, _bg: "panel", _title: "Marchas", cols: 1, mode: "pct", heroSize: 62,
+      items: [{ title: "Marcha 1", note: "", infHero: "", cavHero: "", archHero: "",
+        infName: "", cavName: "", archName: "",
+        infPct: 34, cavPct: 33, archPct: 33, infQty: "", cavQty: "", archQty: "", why: "" }] },
+    styleFields: [
+      { key: "heroSize", type: "number", label: "Tamanho dos retratos (px)", min: 32, max: 140 },
+    ],
+    fields: [
+      { key: "mode", type: "select", label: "Como informar as tropas", options: [
+        { v: "pct", l: "Porcentagem ideal" }, { v: "qty", l: "Quantidade exata" }, { v: "none", l: "Não mostrar" } ] },
+      { key: "cols", type: "select", label: "Colunas", options: [
+        { v: 1, l: "1" }, { v: 2, l: "2" } ] },
+      { key: "items", type: "list", label: "Marchas", addLabel: "Adicionar marcha", titleKey: "title", item: [
+        { key: "title", type: "text", label: "Nome da marcha" },
+        { key: "note", type: "text", label: "Legenda curta" },
+        { type: "heading", label: "Heróis" },
+        { key: "infHero", type: "image", label: "Herói de Infantaria" },
+        { key: "infName", type: "text", label: "Nome" },
+        { key: "cavHero", type: "image", label: "Herói de Cavalaria" },
+        { key: "cavName", type: "text", label: "Nome" },
+        { key: "archHero", type: "image", label: "Herói de Arquearia" },
+        { key: "archName", type: "text", label: "Nome" },
+        { type: "heading", label: "Tropas" },
+        { key: "infPct", type: "number", label: "Infantaria (%)", min: 0, max: 100 },
+        { key: "cavPct", type: "number", label: "Cavalaria (%)", min: 0, max: 100 },
+        { key: "archPct", type: "number", label: "Arquearia (%)", min: 0, max: 100 },
+        { key: "infQty", type: "text", label: "Infantaria (quantidade)" },
+        { key: "cavQty", type: "text", label: "Cavalaria (quantidade)" },
+        { key: "archQty", type: "text", label: "Arquearia (quantidade)" },
+        { type: "heading", label: "Explicação" },
+        { key: "why", type: "richtext", label: "Por que este esquadrão" },
+      ] },
+    ],
+  },
+
   /* ---------------- Members ---------------- */
   lineup: {
     label: "Escalação (vagas + confirmação)", group: "Membros",
-    defaults: { ...baseStyle, _bg: "panel", _title: "Entrar", slots: 30, cols: 1,
+    defaults: { ...baseStyle, _bg: "panel", _title: "Entrar", slots: 30, cols: 1, avatarSize: 46,
       show: { avatar: true, name: true, tier: true, power: true, troops: true },
       askConfirm: true, picks: [] },
     fields: [
@@ -415,18 +485,18 @@ export const BLOCKS = {
       { key: "cols", type: "select", label: "Colunas", options: [
         { v: 1, l: "1" }, { v: 2, l: "2" } ] },
       { key: "avatarSize", type: "number", label: "Tamanho do avatar (px)", min: 24, max: 120 },
-      { key: "avatarSize", type: "number", label: "Tamanho do avatar (px)", min: 24, max: 120 },
       { key: "show", type: "checks", label: "O que mostrar de cada jogador" },
       { key: "picks", type: "members", label: "Quem está escalado" },
     ],
   },
   memberlist: {
     label: "Membros (seção livre)", group: "Membros",
-    defaults: { ...baseStyle, _bg: "panel", _title: "Membros", cols: 2,
+    defaults: { ...baseStyle, _bg: "panel", _title: "Membros", cols: 2, avatarSize: 46,
       show: { avatar: true, name: true, tier: true, power: true, troops: true }, picks: [] },
     fields: [
       { key: "cols", type: "select", label: "Colunas", options: [
         { v: 1, l: "1" }, { v: 2, l: "2" }, { v: 3, l: "3" } ] },
+      { key: "avatarSize", type: "number", label: "Tamanho do avatar (px)", min: 24, max: 120 },
       { key: "show", type: "checks", label: "O que mostrar de cada jogador" },
       { key: "picks", type: "members", label: "Membros selecionados" },
     ],
@@ -445,7 +515,7 @@ export const BLOCKS = {
   /* ---------------- Battle (Tri-Alliance) ---------------- */
   squads: {
     label: "Esquadrões / Heróis", group: "Batalha",
-    defaults: { ...baseStyle, _bg: "panel", _title: "Formations", cols: 1, items: [
+    defaults: { ...baseStyle, _bg: "panel", _title: "Formations", cols: 1, heroSize: 54, items: [
       { title: "Attack squad 1", kind: "attack", note: "", heroes: [{ icon: "", name: "" }] },
     ] },
     fields: [
@@ -467,15 +537,45 @@ export const BLOCKS = {
   },
 
   battlecd: {
-    label: "Contagem de batalha", group: "Batalha",
-    defaults: { label: "Battle starts in", target: "", durationMin: 60,
-      liveText: "BATTLE IN PROGRESS", liveIcon: "/tri/icons/event.png", doneText: "Battle completed — next cycle soon" },
+    label: "Contagem de batalha (antigo)", group: "Batalha", hidden: true,
+    defaults: { ...baseStyle, _bg: "panel", _align: "center", _title: "Battle starts in",
+      target: "", durationMin: 60,
+      showDays: true, showHours: true, showMin: true, showSec: true,
+      labelDays: "Days", labelHours: "Hours", labelMin: "Min", labelSec: "Sec",
+      liveText: "BATTLE IN PROGRESS", liveIcon: "", doneText: "Battle completed",
+      numMetal: true, numColor: "", numFont: "display", numSize: 30,
+      cell: "panel", sep: "colon", unitSize: 8.5, unitColor: "" },
     fields: [
-      { key: "target", type: "datetime", label: "Início da batalha" },
-      { key: "durationMin", type: "number", label: "Duração (min)", min: 5, max: 600 },
-      { key: "liveText", type: "text", label: "Texto durante a batalha" },
-      { key: "liveIcon", type: "image", label: "Ícone durante a batalha" },
-      { key: "doneText", type: "text", label: "Texto após o fim" },
+      { key: "target", type: "datetime", label: "Data e hora do evento" },
+      { key: "durationMin", type: "number", label: "Duração do evento (min)", min: 0, max: 1440 },
+      { type: "heading", label: "Unidades" },
+      { key: "showDays", type: "toggle", label: "Mostrar dias" },
+      { key: "showHours", type: "toggle", label: "Mostrar horas" },
+      { key: "showMin", type: "toggle", label: "Mostrar minutos" },
+      { key: "showSec", type: "toggle", label: "Mostrar segundos" },
+      { key: "labelDays", type: "text", label: "Rótulo dos dias" },
+      { key: "labelHours", type: "text", label: "Rótulo das horas" },
+      { key: "labelMin", type: "text", label: "Rótulo dos minutos" },
+      { key: "labelSec", type: "text", label: "Rótulo dos segundos" },
+      { type: "heading", label: "Mensagens" },
+      { key: "liveText", type: "text", label: "Durante o evento" },
+      { key: "liveIcon", type: "image", label: "Ícone durante o evento" },
+      { key: "doneText", type: "text", label: "Depois do evento" },
+    ],
+    styleFields: [
+      { type: "heading", label: "Números" },
+      { key: "numMetal", type: "toggle", label: "Dourado metálico" },
+      { key: "numColor", type: "color", label: "Cor (se não for metálico)" },
+      { key: "numFont", type: "select", label: "Fonte", options: FONTS },
+      { key: "numSize", type: "number", label: "Tamanho (px)", min: 14, max: 96 },
+      { type: "heading", label: "Caixas e separador" },
+      { key: "cell", type: "select", label: "Estilo das caixas", options: [
+        { v: "panel", l: "Painel" }, { v: "plain", l: "Sem caixa" }, { v: "frame", l: "Moldura dourada" } ] },
+      { key: "sep", type: "select", label: "Separador", options: [
+        { v: "colon", l: "Dois-pontos" }, { v: "dot", l: "Ponto" }, { v: "none", l: "Nenhum" } ] },
+      { type: "heading", label: "Rótulos das unidades" },
+      { key: "unitSize", type: "number", label: "Tamanho (px)", min: 6, max: 24 },
+      { key: "unitColor", type: "color", label: "Cor" },
     ],
   },
   howwewin: {

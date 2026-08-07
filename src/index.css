@@ -459,3 +459,8 @@ button, input, select { font-family: inherit; }
 .r-stats span { font-size: 13px; }
 .r-stats i { font-size: 8px; letter-spacing: 0.12em; }
 .tier-ic { flex-shrink: 0; display: block; filter: drop-shadow(0 1px 2px #0009); }
+
+/* ---- countdown: cell styles are now a choice ---- */
+.cd-nums.cell-plain .cd-cell { background: none; box-shadow: none; padding: 0 6px; }
+.cd-nums.cell-frame .cd-cell { background: transparent; box-shadow: 0 0 0 1px var(--gold-dk); }
+.cd-nums .cd-sep { align-self: center; }
