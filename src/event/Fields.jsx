@@ -162,6 +162,7 @@ function ListField({ field, value, onChange }) {
 
 /* ---------- dispatcher ---------- */
 export default function Field({ field, value, onChange }) {
+  if (field.type === "heading") return <div className="f-sec">{field.label}</div>;
   const label = field.label && <label className="f-lbl">{field.label}</label>;
 
   switch (field.type) {

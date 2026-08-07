@@ -76,16 +76,89 @@ function Countdown({ target, label, done }) {
 const ytId = (u = "") => (/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{6,})/.exec(u) || [])[1];
 const vimeoId = (u = "") => (/vimeo\.com\/(\d+)/.exec(u) || [])[1];
 
+
+/* --- reveal on scroll --- */
+function useReveal(enabled) {
+  const ref = React.useRef(null);
+  const [seen, setSeen] = React.useState(!enabled);
+  React.useEffect(() => {
+    if (!enabled || seen || !ref.current) return;
+    if (typeof IntersectionObserver === "undefined") { setSeen(true); return; }
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); io.disconnect(); } },
+      { rootMargin: "0px 0px -8% 0px" });
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, [enabled, seen]);
+  return [ref, seen];
+}
+
+/* --- turn the _* style props into classes + inline vars --- */
+const FONT_STACK = {
+  display: "var(--font-display)",
+  sans: "var(--font-sans)",
+  mono: "ui-monospace, SFMono-Regular, Menlo, monospace",
+};
+
+function chrome(b) {
+  const A = b._accent || "#ecc25a";
+  const cls = [
+    "blk", `blk-${b.type}`,
+    `bg-${b._bg || "none"}`, `pad-${b._pad || "md"}`, `al-${b._align || "left"}`,
+    `fr-${b._frame || "none"}`, `sh-${b._shadow || "none"}`, `sc-${b._scale || "md"}`,
+    b._full ? "blk-full" : "",
+    b._loop ? `lp-${b._loop}` : "",
+  ].filter(Boolean);
+
+  const style = {
+    "--a": A,
+    "--fr": b._frameColor || A,
+    "--rad": `${b._radius ?? 14}px`,
+    "--delay": `${b._animDelay || 0}ms`,
+  };
+  if (b._bg === "solid" && b._bgColor) style.background = b._bgColor;
+  if (b._bg === "grad") style.background =
+    `linear-gradient(${b._bgAngle ?? 180}deg, ${b._bgColor || A}, ${b._bgColor2 || "transparent"})`;
+
+  return { cls: cls.join(" "), style, A };
+}
+
+function Title({ b }) {
+  if (!b._title && !imgSrc(b._titleIcon)) return null;
+  const st = {
+    color: b._titleColor || undefined,
+    fontFamily: FONT_STACK[b._titleFont || "sans"],
+    fontSize: b._titleSize ? `${b._titleSize}px` : undefined,
+    fontWeight: b._titleWeight || undefined,
+    textTransform: b._titleCase === "none" ? "none" : "uppercase",
+    letterSpacing: b._titleTrack != null ? `${b._titleTrack / 100}em` : undefined,
+    justifyContent: b._titleAlign === "center" ? "center" : b._titleAlign === "right" ? "flex-end" : "flex-start",
+  };
+  return (
+    <div className={`blk-title${b._titleRule ? " has-rule" : ""}`} style={st}>
+      {imgSrc(b._titleIcon) && <img src={imgSrc(b._titleIcon)} alt="" />}
+      {b._title && <span>{b._title}</span>}
+    </div>
+  );
+}
+
 /* --- the renderer --- */
 export default function BlockView({ b }) {
-  const A = b._accent || "#ecc25a";
-  const cls = `blk blk-${b.type} bg-${b._bg || "none"} pad-${b._pad || "md"} al-${b._align || "left"}`;
-  const style = { "--a": A };
+  const { cls, style, A } = chrome(b);
+  const [ref, seen] = useReveal(!!b._anim);
+  const animCls = b._anim ? (seen ? ` rv rv-${b._anim} in` : ` rv rv-${b._anim}`) : "";
 
   const wrap = (inner) => (
-    <section className={cls} style={style}>
-      {b._title ? <div className="lbl blk-title">{b._title}</div> : null}
-      {inner}
+    <section ref={ref} className={cls + animCls} style={style}>
+      {imgSrc(b._bgImage) && (b._bg === "image") && (
+        <>
+          <img className="blk-bgimg" src={imgSrc(b._bgImage)} alt="" />
+          <span className="blk-bgdim" style={{ opacity: (b._bgDim ?? 45) / 100 }} />
+        </>
+      )}
+      <div className="blk-in">
+        <Title b={b} />
+        {inner}
+      </div>
     </section>
   );
 
@@ -203,9 +276,12 @@ export default function BlockView({ b }) {
                 </div>
               </>
             );
+            const ccls = `card fr-${it.frame || "none"}${it.featured ? " feat" : ""}${it.anim ? ` lp-${it.anim}` : ""}`;
+            const cst = { "--k": it.color || A, "--fr": it.color || A,
+              background: it.bg || undefined };
             return it.link
-              ? <a className="card" key={i} href={it.link} target="_blank" rel="noreferrer" style={{ "--k": it.color || A }}>{inner}</a>
-              : <div className="card" key={i} style={{ "--k": it.color || A }}>{inner}</div>;
+              ? <a className={ccls} key={i} href={it.link} target="_blank" rel="noreferrer" style={cst}>{inner}</a>
+              : <div className={ccls} key={i} style={cst}>{inner}</div>;
           })}
         </div>,
       );

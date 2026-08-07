@@ -20,19 +20,86 @@ export const PALETTE = [
   { name: "Ink", v: "#eef3f8" },
 ];
 
-// Shared style fields — every block gets these under the "Style" tab
-export const STYLE_FIELDS = [
-  { key: "_bg", type: "select", label: "Fundo", options: [
-    { v: "none", l: "Nenhum" }, { v: "panel", l: "Painel" },
-    { v: "well", l: "Afundado" }, { v: "frame", l: "Moldura dourada" } ] },
-  { key: "_accent", type: "color", label: "Cor de destaque" },
-  { key: "_align", type: "select", label: "Alinhamento", options: [
-    { v: "left", l: "Esquerda" }, { v: "center", l: "Centro" } ] },
-  { key: "_pad", type: "select", label: "Espaçamento", options: [
-    { v: "sm", l: "Compacto" }, { v: "md", l: "Normal" }, { v: "lg", l: "Amplo" } ] },
+// Shared style fields — the "Estilo" tab of every non-raw block
+export const FONTS = [
+  { v: "display", l: "Serifada (título)" },
+  { v: "sans", l: "Sem serifa" },
+  { v: "mono", l: "Monoespaçada" },
+];
+export const ANIM_IN = [
+  { v: "", l: "Nenhuma" }, { v: "fade", l: "Aparecer" }, { v: "up", l: "Subir" },
+  { v: "down", l: "Descer" }, { v: "left", l: "Da esquerda" }, { v: "right", l: "Da direita" },
+  { v: "zoom", l: "Ampliar" }, { v: "flip", l: "Girar" },
+];
+export const LOOPS = [
+  { v: "", l: "Nenhum" }, { v: "float", l: "Flutuar" }, { v: "glow", l: "Brilhar" },
+  { v: "shine", l: "Reflexo" }, { v: "pulse", l: "Pulsar" },
+];
+export const FRAMES = [
+  { v: "none", l: "Sem moldura" }, { v: "hair", l: "Fina" }, { v: "gold", l: "Dourada" },
+  { v: "thick", l: "Grossa" }, { v: "double", l: "Dupla ornamentada" },
+  { v: "dashed", l: "Tracejada" }, { v: "left", l: "Barra lateral" },
 ];
 
-const baseStyle = { _bg: "none", _accent: "#ecc25a", _align: "left", _pad: "md", _title: "" };
+export const STYLE_FIELDS = [
+  { type: "heading", label: "Título" },
+  { key: "_titleIcon", type: "image", label: "Ícone do título" },
+  { key: "_titleColor", type: "color", label: "Cor do título" },
+  { key: "_titleFont", type: "select", label: "Fonte", options: FONTS },
+  { key: "_titleSize", type: "number", label: "Tamanho (px)", min: 9, max: 46 },
+  { key: "_titleWeight", type: "select", label: "Peso", options: [
+    { v: 400, l: "Normal" }, { v: 700, l: "Negrito" }, { v: 800, l: "Extra" } ] },
+  { key: "_titleCase", type: "select", label: "Caixa", options: [
+    { v: "upper", l: "MAIÚSCULAS" }, { v: "none", l: "Normal" } ] },
+  { key: "_titleTrack", type: "number", label: "Espaçamento entre letras (0-30)", min: 0, max: 30 },
+  { key: "_titleAlign", type: "select", label: "Alinhamento do título", options: [
+    { v: "left", l: "Esquerda" }, { v: "center", l: "Centro" }, { v: "right", l: "Direita" } ] },
+  { key: "_titleRule", type: "toggle", label: "Linha sob o título" },
+
+  { type: "heading", label: "Fundo" },
+  { key: "_bg", type: "select", label: "Tipo de fundo", options: [
+    { v: "none", l: "Transparente" }, { v: "panel", l: "Painel" }, { v: "well", l: "Afundado" },
+    { v: "frame", l: "Painel dourado" }, { v: "solid", l: "Cor sólida" },
+    { v: "grad", l: "Gradiente" }, { v: "image", l: "Imagem" } ] },
+  { key: "_bgColor", type: "color", label: "Cor do fundo" },
+  { key: "_bgColor2", type: "color", label: "Segunda cor (gradiente)" },
+  { key: "_bgAngle", type: "number", label: "Ângulo do gradiente", min: 0, max: 360 },
+  { key: "_bgImage", type: "image", label: "Imagem de fundo" },
+  { key: "_bgDim", type: "number", label: "Escurecer imagem (%)", min: 0, max: 95 },
+
+  { type: "heading", label: "Moldura e sombra" },
+  { key: "_frame", type: "select", label: "Moldura", options: FRAMES },
+  { key: "_frameColor", type: "color", label: "Cor da moldura" },
+  { key: "_radius", type: "number", label: "Cantos (px)", min: 0, max: 34 },
+  { key: "_shadow", type: "select", label: "Sombra", options: [
+    { v: "none", l: "Nenhuma" }, { v: "soft", l: "Suave" }, { v: "deep", l: "Profunda" },
+    { v: "glow", l: "Brilho colorido" } ] },
+
+  { type: "heading", label: "Layout" },
+  { key: "_accent", type: "color", label: "Cor de destaque" },
+  { key: "_align", type: "select", label: "Alinhamento do conteúdo", options: [
+    { v: "left", l: "Esquerda" }, { v: "center", l: "Centro" } ] },
+  { key: "_pad", type: "select", label: "Espaçamento interno", options: [
+    { v: "none", l: "Nenhum" }, { v: "sm", l: "Compacto" }, { v: "md", l: "Normal" },
+    { v: "lg", l: "Amplo" }, { v: "xl", l: "Muito amplo" } ] },
+  { key: "_scale", type: "select", label: "Tamanho do conteúdo", options: [
+    { v: "sm", l: "Pequeno" }, { v: "md", l: "Normal" }, { v: "lg", l: "Grande" } ] },
+  { key: "_full", type: "toggle", label: "Sangrar até as bordas" },
+
+  { type: "heading", label: "Animação" },
+  { key: "_anim", type: "select", label: "Entrada (ao rolar)", options: ANIM_IN },
+  { key: "_animDelay", type: "number", label: "Atraso (ms)", min: 0, max: 2000 },
+  { key: "_loop", type: "select", label: "Contínua", options: LOOPS },
+];
+
+const baseStyle = {
+  _title: "", _titleIcon: "", _titleColor: "", _titleFont: "sans", _titleSize: 9,
+  _titleWeight: 700, _titleCase: "upper", _titleTrack: 20, _titleAlign: "left", _titleRule: false,
+  _bg: "none", _bgColor: "", _bgColor2: "", _bgAngle: 180, _bgImage: "", _bgDim: 45,
+  _frame: "none", _frameColor: "", _radius: 14, _shadow: "none",
+  _accent: "#ecc25a", _align: "left", _pad: "md", _scale: "md", _full: false,
+  _anim: "", _animDelay: 0, _loop: "",
+};
 
 // Prepended to the content tab of every non-raw block
 export const TITLE_FIELD = { key: "_title", type: "text", label: "Título da seção (opcional)" };
@@ -161,6 +228,10 @@ export const BLOCKS = {
           { key: "text", type: "richtext", label: "Texto" },
           { key: "badge", type: "text", label: "Etiqueta" },
           { key: "color", type: "color", label: "Cor" },
+          { key: "bg", type: "color", label: "Cor de fundo" },
+          { key: "frame", type: "select", label: "Moldura", options: FRAMES },
+          { key: "featured", type: "toggle", label: "Destacar" },
+          { key: "anim", type: "select", label: "Animação contínua", options: LOOPS },
           { key: "link", type: "text", label: "Link (opcional)" },
         ] },
     ],
