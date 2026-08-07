@@ -59,16 +59,25 @@ const animStyle = (l) => ({
   animationDuration: l.dur ? `${l.dur}s` : undefined,
 });
 
+/* Sizes are stored as a fraction of the image's short side, so a default
+   looks right on a 48px icon and on a 1920px map alike. Values above 1 are
+   legacy absolute pixels and still work. */
+const abs = (v, S, def) => {
+  const n = v == null || v === "" ? def : Number(v);
+  return n > 1 ? n : n * S;
+};
+
 /* --- one annotation layer --- */
 function Layer({ l, W, H }) {
   const X = (x) => x * W, Y = (y) => y * H;
+  const S = Math.min(W, H);
   const c = l.color || "#ecc25a";
   const cls = animClass(l.anim);
   const st = animStyle(l);
 
   switch (l.type) {
     case "pin": {
-      const r = l.size || 14;
+      const r = abs(l.size, S, 0.055);
       return (
         <g transform={`translate(${X(l.x)} ${Y(l.y)})`}>
           <g className={`an-l${cls}`} style={st}>
@@ -85,24 +94,62 @@ function Layer({ l, W, H }) {
     case "icon":
       return (
         <g className={`an-l${cls}`} style={st}>
-          <image href={l.src} x={X(l.x) - (l.size || 32) / 2} y={Y(l.y) - (l.size || 32) / 2}
-                 width={l.size || 32} height={l.size || 32} />
+          {(() => { const sz = abs(l.size, S, 0.14); return (
+            <image href={l.src} x={X(l.x) - sz / 2} y={Y(l.y) - sz / 2} width={sz} height={sz} />
+          ); })()}
         </g>
       );
     case "text": {
-      const s = l.size || 22;
+      const s = abs(l.size, S, 0.09);
+      const fam = l.font === "display" ? "Georgia, serif"
+        : l.font === "mono" ? "ui-monospace, Menlo, monospace" : "system-ui, sans-serif";
+      const rot = l.rot ? `rotate(${l.rot} ${X(l.x)} ${Y(l.y)})` : undefined;
+      const lines = String(l.text || "").split("\n");
+      return (
+        <g className={`an-l${cls}`} style={st} transform={rot} opacity={l.opacity ?? 1}>
+          {l.box && (
+            <rect x={X(l.x) - s * 0.35} y={Y(l.y) - s * 0.95}
+                  width={Math.max(...lines.map((t) => t.length)) * s * 0.56 + s * 0.7}
+                  height={lines.length * s * 1.25 + s * 0.3}
+                  rx={s * 0.25} fill={l.boxColor || "#0d1218"} fillOpacity={l.boxOp ?? 0.72} />
+          )}
+          <text x={X(l.x)} y={Y(l.y)} textAnchor={l.align || "start"} fill={c}
+                stroke={l.outline === false ? "none" : (l.outlineColor || "#0d1218")}
+                strokeWidth={l.outline === false ? 0 : s * (l.outlineW ?? 0.22)} paintOrder="stroke"
+                style={{ font: `${l.weight || 800} ${s}px ${fam}`, whiteSpace: "pre" }}>
+            {lines.map((t, i) => (
+              <tspan key={i} x={X(l.x)} dy={i === 0 ? 0 : s * 1.25}>{t}</tspan>
+            ))}
+          </text>
+        </g>
+      );
+    }
+
+    case "line": {
+      const w = abs(l.width, S, 0.02);
+      return (
+        <g className={`an-l${cls}`} style={st} opacity={l.opacity ?? 1}>
+          <line x1={X(l.x)} y1={Y(l.y)} x2={X(l.x2)} y2={Y(l.y2)} stroke="#0d1218"
+                strokeWidth={w + S * 0.012} strokeLinecap="round" opacity="0.5" />
+          <line x1={X(l.x)} y1={Y(l.y)} x2={X(l.x2)} y2={Y(l.y2)} stroke={c}
+                strokeWidth={w} strokeLinecap="round" />
+        </g>
+      );
+    }
+
+    case "highlight": {
+      const w = abs(l.width, S, 0.07);
       return (
         <g className={`an-l${cls}`} style={st}>
-          <text x={X(l.x)} y={Y(l.y)} textAnchor={l.align || "start"} fill={c}
-                stroke="#0d1218" strokeWidth={s * 0.22} paintOrder="stroke"
-                style={{ font: `800 ${s}px system-ui, sans-serif`, whiteSpace: "pre" }}>{l.text}</text>
+          <line x1={X(l.x)} y1={Y(l.y)} x2={X(l.x2)} y2={Y(l.y2)} stroke={c}
+                strokeWidth={w} strokeLinecap="round" opacity={l.opacity ?? 0.42} />
         </g>
       );
     }
     case "route": {
       if ((l.pts || []).length < 2) return null;
       const pts = l.pts.map(([x, y]) => `${X(x)},${Y(y)}`).join(" ");
-      const w = l.width || 6;
+      const w = abs(l.width, S, 0.02);
       return (
         <g className={`an-l${cls}`} style={st}>
           <polyline points={pts} fill="none" stroke="#0d1218" strokeWidth={w + 5}
@@ -116,7 +163,7 @@ function Layer({ l, W, H }) {
       );
     }
     case "arrow": {
-      const w = l.width || 6;
+      const w = abs(l.width, S, 0.02);
       return (
         <g className={`an-l${cls}`} style={st}>
           <line x1={X(l.x)} y1={Y(l.y)} x2={X(l.x2)} y2={Y(l.y2)} stroke="#0d1218" strokeWidth={w + 5} strokeLinecap="round" opacity="0.5" />
@@ -131,7 +178,7 @@ function Layer({ l, W, H }) {
           <rect x={X(Math.min(l.x, l.x2))} y={Y(Math.min(l.y, l.y2))}
                 width={Math.abs(X(l.x2) - X(l.x))} height={Math.abs(Y(l.y2) - Y(l.y))}
                 rx={l.radius ?? 4} fill={l.fill ? c : "none"} fillOpacity={l.fill ? (l.fillOp ?? 0.22) : 0}
-                stroke={c} strokeWidth={l.width || 5} />
+                stroke={c} strokeWidth={abs(l.width, S, 0.016)} />
         </g>
       );
     case "circle": {
@@ -140,7 +187,7 @@ function Layer({ l, W, H }) {
         <g className={`an-l${cls}`} style={st}>
           <ellipse cx={X(l.x) + (X(l.x2) - X(l.x)) / 2} cy={Y(l.y) + (Y(l.y2) - Y(l.y)) / 2}
                    rx={rx} ry={ry} fill={l.fill ? c : "none"} fillOpacity={l.fill ? (l.fillOp ?? 0.22) : 0}
-                   stroke={c} strokeWidth={l.width || 5} />
+                   stroke={c} strokeWidth={abs(l.width, S, 0.016)} />
         </g>
       );
     }
@@ -186,7 +233,20 @@ export default function Pic({ v, className, style, alt = "", fit = "auto", loadi
           ...imgStyle,
         }}
       />
-      {layers.length > 0 && (
+      {layers.filter((l) => l.type === "blur").map((l) => {
+        const x0 = Math.min(l.x, l.x2), y0 = Math.min(l.y, l.y2);
+        return (
+          <span key={l.id} className="an-blur" style={{
+            position: "absolute",
+            left: `${x0 * 100}%`, top: `${y0 * 100}%`,
+            width: `${Math.abs(l.x2 - l.x) * 100}%`, height: `${Math.abs(l.y2 - l.y) * 100}%`,
+            backdropFilter: `blur(${l.amount || 8}px)`,
+            WebkitBackdropFilter: `blur(${l.amount || 8}px)`,
+            borderRadius: l.round ? "8px" : 0,
+          }} />
+        );
+      })}
+      {layers.some((l) => l.type !== "blur") && (
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none"
              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
              aria-hidden="true">
@@ -198,7 +258,7 @@ export default function Pic({ v, className, style, alt = "", fit = "auto", loadi
               </marker>
             ))}
           </defs>
-          {layers.map((l) => <Layer key={l.id} l={l} W={W} H={H} />)}
+          {layers.filter((l) => l.type !== "blur").map((l) => <Layer key={l.id} l={l} W={W} H={H} />)}
         </svg>
       )}
     </span>

@@ -242,7 +242,7 @@ export default function EventEditor() {
         <button className="ev-area ev-area-add" onClick={addTab} title="Nova aba">+</button>
       </div>
 
-      <div className="ev-body">
+      <div className={`ev-body${current ? " has-insp" : ""}`}>
         <div className="ev-canvas">
           {area === "header" && (
             <div className="ev-note">Blocos aqui aparecem <b>acima do menu de abas</b>, em todas as abas.</div>
@@ -364,17 +364,14 @@ function Canvas({ blocks, parentId, sel, setSel, setTab, onAdd, move, dup, del, 
                 <button onClick={() => dup(b.id)} title="Duplicar">⧉</button>
                 <button className="x" onClick={() => del(b.id)}>×</button>
               </div>
-              {schema?.container ? (
-                <div className="ev-group">
-                  {b._title && <div className="lbl">{b._title}</div>}
+              <div className="ev-blk-in">
+                <BlockView b={b} slot={schema?.container ? (
                   <div className="ev-group-in">
                     <Canvas blocks={b.children || []} parentId={b.id} sel={sel} setSel={setSel} setTab={setTab}
                             onAdd={onAdd} move={move} dup={dup} del={del} depth={depth + 1} />
                   </div>
-                </div>
-              ) : (
-                <div className="ev-blk-in"><BlockView b={b} /></div>
-              )}
+                ) : undefined} />
+              </div>
             </div>
             <AddHere onClick={() => onAdd(parentId, i + 1)} />
           </React.Fragment>

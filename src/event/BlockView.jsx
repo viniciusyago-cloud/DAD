@@ -132,7 +132,12 @@ function Title({ b }) {
 const PANEL_BY_DEFAULT = new Set(["phases", "buildings", "rules", "marches", "howwewin", "battlecd",
   "squads", "lineup", "memberlist", "confirmed", "march", "countdown"]);
 
-export default function BlockView({ b }) {
+/**
+ * `slot` lets the editor put its own drop area where the children would go,
+ * so a container on the canvas gets exactly the same chrome — background,
+ * frame, shadow, title typography — that it will have on the live page.
+ */
+export default function BlockView({ b, slot }) {
   if (PANEL_BY_DEFAULT.has(b.type) && b._bg == null) b = { ...b, _bg: "panel" };
   const { cls, style, A } = chrome(b);
   const [ref, seen] = useReveal(!!b._anim);
@@ -422,10 +427,12 @@ export default function BlockView({ b }) {
 
     case "group":
       return wrap(
-        <div className={(b.cols || 1) > 1 ? "grid" : "stack"} style={{ "--c": b.cols || 1 }}>
-          {(b.children || []).map((ch) => <BlockView key={ch.id} b={ch} />)}
-          {(b.children || []).length === 0 && <div className="ph">Empty section</div>}
-        </div>,
+        slot || (
+          <div className={(b.cols || 1) > 1 ? "grid" : "stack"} style={{ "--c": b.cols || 1 }}>
+            {(b.children || []).map((ch) => <BlockView key={ch.id} b={ch} />)}
+            {(b.children || []).length === 0 && <div className="ph">Empty section</div>}
+          </div>
+        ),
       );
 
     case "squads":
