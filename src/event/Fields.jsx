@@ -229,7 +229,7 @@ export default function Field({ field, value, onChange }) {
     case "number":
       return (
         <div className="f">{label}
-          <input className="f-in" type="number" min={field.min} max={field.max}
+          <input className="f-in" type="number" min={field.min} max={field.max} placeholder={field.placeholder}
             value={value ?? ""} onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))} />
         </div>
       );

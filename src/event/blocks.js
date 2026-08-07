@@ -42,18 +42,23 @@ export const FRAMES = [
 ];
 
 /** Typography controls for one named line of text inside a block. */
+/* These lines have no stored value until you set one, so every select opens
+   on "Padrão" — picking the option that is already showing would fire no
+   change at all and look like the control does nothing. */
+const KEEP = { v: "", l: "Padrão" };
+
 export const textStyle = (p, label) => [
   { type: "heading", label },
   { key: `${p}Color`, type: "color", label: "Cor" },
-  { key: `${p}Font`, type: "select", label: "Fonte", options: FONTS },
-  { key: `${p}Size`, type: "number", label: "Tamanho (px)", min: 8, max: 90 },
+  { key: `${p}Font`, type: "select", label: "Fonte", options: [KEEP, ...FONTS] },
+  { key: `${p}Size`, type: "number", label: "Tamanho (px)", min: 8, max: 90, placeholder: "padrão" },
   { key: `${p}Weight`, type: "select", label: "Peso", options: [
-    { v: 400, l: "Normal" }, { v: 700, l: "Negrito" }, { v: 800, l: "Extra" } ] },
+    KEEP, { v: 400, l: "Normal" }, { v: 700, l: "Negrito" }, { v: 800, l: "Extra" } ] },
   { key: `${p}Case`, type: "select", label: "Caixa", options: [
-    { v: "none", l: "Normal" }, { v: "upper", l: "MAIÚSCULAS" } ] },
-  { key: `${p}Track`, type: "number", label: "Espaçamento entre letras (0-40)", min: 0, max: 40 },
+    KEEP, { v: "none", l: "Normal" }, { v: "upper", l: "MAIÚSCULAS" } ] },
+  { key: `${p}Track`, type: "number", label: "Espaçamento entre letras (0-40)", min: 0, max: 40, placeholder: "padrão" },
   { key: `${p}Align`, type: "select", label: "Alinhamento", options: [
-    { v: "left", l: "Esquerda" }, { v: "center", l: "Centro" }, { v: "right", l: "Direita" } ] },
+    KEEP, { v: "left", l: "Esquerda" }, { v: "center", l: "Centro" }, { v: "right", l: "Direita" } ] },
 ];
 
 export const STYLE_FIELDS = [
