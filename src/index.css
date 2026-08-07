@@ -94,11 +94,11 @@ button, input, select { font-family: inherit; }
 .kebab { flex-shrink: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 7px; background: transparent; border: none; color: var(--ink-mute); cursor: pointer; transition: all .15s; }
 .kebab:hover { color: var(--gold); background: var(--well); }
 
-.troops { display: flex; gap: 6px; }
-.tchip { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 7px 9px; border-radius: 8px; background: var(--well); box-shadow: inset 0 1px 2px #0007, 0 0 0 1px var(--edge); }
-.tchip :is(img, .pic) { width: 18px; height: 18px; flex-shrink: 0; filter: drop-shadow(0 1px 1px #0007); }
-.tchip .rng { font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-.tchip.arch .rng { color: var(--arch); } .tchip.cav .rng { color: var(--cav); } .tchip.inf .rng { color: var(--inf); }
+.troops { display: flex; gap: 14px; flex-wrap: wrap; }
+.tchip { display: inline-flex; align-items: center; gap: 5px; padding: 0; background: none; box-shadow: none; }
+.tchip :is(img, .pic) { width: 15px; height: 15px; opacity: .85; flex-shrink: 0; filter: drop-shadow(0 1px 1px #0007); }
+.tchip .rng { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.tchip.arch .rng { color: #c9714a; } .tchip.cav .rng { color: #c2a153; } .tchip.inf .rng { color: #5a9c7d; }
 
 .row-menu { position: absolute; right: 10px; top: 42px; z-index: 30; min-width: 140px; background: #1f2b37; border-radius: 10px; box-shadow: 0 0 0 1px var(--edge-hi), 0 12px 26px #000d; padding: 5px; display: flex; flex-direction: column; }
 .row-menu button { text-align: left; padding: 10px 12px; border-radius: 7px; background: transparent; border: none; color: var(--ink-dim); font-size: 13px; font-weight: 600; cursor: pointer; }
@@ -437,3 +437,18 @@ button, input, select { font-family: inherit; }
   box-shadow: inset 0 0 0 1px var(--edge); cursor: default; }
 .st-unit { flex-shrink: 0; align-self: center; padding: 0 4px; font-size: 14px;
   font-weight: 800; color: var(--ink-mute); }
+
+/* ---- member card: power + total are the headline numbers ---- */
+.r-stats { display: flex; align-items: baseline; gap: 16px; margin-top: 9px; padding-top: 9px;
+  border-top: 1px solid #ffffff0f; }
+.r-stats span { display: inline-flex; align-items: baseline; gap: 6px;
+  font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--gold-lt);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.r-stats i { font-style: normal; font-family: var(--font-sans); font-size: 8.5px; font-weight: 700;
+  color: var(--ink-mute); letter-spacing: 0.14em; text-transform: uppercase; }
+.r-stats .muted { color: var(--ink-mute); font-weight: 400; }
+
+/* tighter rows so more members fit on a screen */
+.row { padding: 11px 13px; }
+.r-body { gap: 8px; }
+.tier-ic { flex-shrink: 0; display: block; filter: drop-shadow(0 1px 2px #0009); }

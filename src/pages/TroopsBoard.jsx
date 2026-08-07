@@ -274,8 +274,8 @@ export default function TroopsBoard() {
                   <TChip cls="arch" icon={TROOP_ICON.arch} value={r.arch} />
                 </div>
                 <div className="r-stats">
-                  <span><i>Power</i>{r.power > 0 ? `${trim1(Number(r.power))}M` : "—"}</span>
-                  <span><i>Total</i>{fmt(r.total)}</span>
+                  <span><i>Power</i>{r.power > 0 ? `${trim1(Number(r.power))}M` : <em className="muted">—</em>}</span>
+                  <span><i>Troops</i>{fmt(r.total)}</span>
                 </div>
               </div>
               {menuId === r.id && (
@@ -325,7 +325,7 @@ export default function TroopsBoard() {
               <TroopField cls="cav" icon={TROOP_ICON.cav} label="Cavalry" value={form.cav} onSet={(v) => setForm({ ...form, cav: v })} />
               <TroopField cls="arch" icon={TROOP_ICON.arch} label="Archery" value={form.arch} onSet={(v) => setForm({ ...form, arch: v })} />
               <div className="st-row st-total">
-                <span className="st-lbl">Total</span>
+                <span className="st-lbl">Total troops</span>
                 <div className="st-in">
                   <output className="st-num st-ro">
                     {((Number(form.inf) || 0) + (Number(form.cav) || 0) + (Number(form.arch) || 0)).toLocaleString("en-US")}
