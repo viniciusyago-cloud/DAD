@@ -1,6 +1,8 @@
 import React, { useRef, useState } from "react";
 import { supabase } from "../supabaseClient.js";
 import { PALETTE } from "./blocks.js";
+import ImageEditor from "./imgedit/ImageEditor.jsx";
+import { imgSrc, hasAnno } from "./imgedit/Pic.jsx";
 
 /* ============================================================
    SCHEMA-DRIVEN FIELD EDITORS
@@ -13,6 +15,7 @@ function ImageField({ value, onChange }) {
   const fileRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [edit, setEdit] = useState(false);
 
   const upload = async (file) => {
     if (!file) return;
@@ -32,26 +35,36 @@ function ImageField({ value, onChange }) {
     } finally { setBusy(false); }
   };
 
+  const url = imgSrc(value);
   return (
     <div className="f-img">
       <div className="f-img-row">
         <div className="f-img-prev">
-          {value ? <img src={value} alt="" /> : <span>—</span>}
+          {url ? <img src={url} alt="" /> : <span>—</span>}
+          {hasAnno(value) && <span className="f-img-badge">anotada</span>}
         </div>
         <div className="f-img-ctl">
           <input className="f-in" placeholder="Cole uma URL de imagem/GIF"
-                 value={value || ""} onChange={(e) => onChange(e.target.value)} />
+                 value={typeof value === "string" ? value : url}
+                 onChange={(e) => onChange(e.target.value)} />
           <div className="f-img-btns">
             <button type="button" className="f-btn" onClick={() => fileRef.current?.click()} disabled={busy}>
-              {busy ? "Enviando…" : "Enviar arquivo"}
+              {busy ? "Enviando…" : "Enviar"}
             </button>
-            {value && <button type="button" className="f-btn f-btn-x" onClick={() => onChange("")}>Limpar</button>}
+            <button type="button" className="f-btn f-btn-edit" onClick={() => setEdit(true)}>
+              {hasAnno(value) ? "Editar anotações" : "Editar imagem"}
+            </button>
+            {url && <button type="button" className="f-btn f-btn-x" onClick={() => onChange("")}>Limpar</button>}
           </div>
         </div>
       </div>
       {err && <div className="f-err">{err}</div>}
       <input ref={fileRef} type="file" accept="image/*,video/mp4" hidden
              onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ""; }} />
+      {edit && (
+        <ImageEditor value={value} onClose={() => setEdit(false)}
+                     onSave={(v) => { onChange(v); setEdit(false); }} />
+      )}
     </div>
   );
 }

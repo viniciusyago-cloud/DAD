@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BattlePlan, Phases, Buildings, Rules, Marches, HowWeWin, BattleCd } from "./TriBlocks.jsx";
+import Pic, { imgSrc, hasAnno } from "./imgedit/Pic.jsx";
 
 /* ============================================================
    BLOCK RENDERER — draws any block from the registry.
@@ -99,7 +100,7 @@ export default function BlockView({ b }) {
     case "hero":
       return (
         <section className={`blk blk-hero al-${b._align || "center"}`} style={{ ...style, height: b.height || 280 }}>
-          {b.image && <img className="hero-bg" src={b.image} alt="" />}
+          {imgSrc(b.image) && <img className="hero-bg" src={imgSrc(b.image)} alt="" />}
           <div className="hero-scrim" style={{ opacity: (b.overlay ?? 60) / 100 }} />
           <div className="hero-in">
             {b.eyebrow && <div className="hero-eyebrow">{b.eyebrow}</div>}
@@ -126,8 +127,11 @@ export default function BlockView({ b }) {
     case "image":
       return wrap(
         <figure className={b.full ? "fig full" : "fig"}>
-          {b.src ? <img src={b.src} alt={b.caption || ""} style={{ borderRadius: b.radius ?? 12 }} />
-                 : <div className="ph">Sem imagem</div>}
+          {imgSrc(b.src)
+            ? (hasAnno(b.src)
+                ? <Pic v={b.src} alt={b.caption || ""} style={{ display: "block", width: "100%", borderRadius: b.radius ?? 12 }} />
+                : <img src={imgSrc(b.src)} alt={b.caption || ""} style={{ borderRadius: b.radius ?? 12 }} />)
+            : <div className="ph">Sem imagem</div>}
           {b.caption && <figcaption>{b.caption}</figcaption>}
         </figure>,
       );
@@ -137,7 +141,11 @@ export default function BlockView({ b }) {
         <div className="grid" style={{ "--c": b.cols || 2 }}>
           {(b.items || []).map((it, i) => (
             <figure className="fig" key={i}>
-              {it.src ? <img src={it.src} alt={it.caption || ""} /> : <div className="ph">Imagem</div>}
+              {imgSrc(it.src)
+                ? (hasAnno(it.src)
+                    ? <Pic v={it.src} alt={it.caption || ""} style={{ display: "block", width: "100%", borderRadius: 10 }} />
+                    : <img src={imgSrc(it.src)} alt={it.caption || ""} />)
+                : <div className="ph">Imagem</div>}
               {it.caption && <figcaption>{it.caption}</figcaption>}
             </figure>
           ))}
@@ -166,7 +174,7 @@ export default function BlockView({ b }) {
         <div className="grid" style={{ "--c": b.cols || 3 }}>
           {(b.items || []).map((it, i) => (
             <div className="kpi" key={i} style={{ "--k": it.color || A }}>
-              {it.icon && <img src={it.icon} alt="" />}
+              {imgSrc(it.icon) && <img src={imgSrc(it.icon)} alt="" />}
               <div className="kpi-v">{it.value}</div>
               <div className="kpi-l">{it.label}</div>
             </div>
@@ -180,7 +188,9 @@ export default function BlockView({ b }) {
           {(b.items || []).map((it, i) => {
             const inner = (
               <>
-                {it.image && <img className="card-img" src={it.image} alt="" />}
+                {imgSrc(it.image) && (hasAnno(it.image)
+                  ? <Pic v={it.image} className="card-img" style={{ display: "block", width: "100%" }} />
+                  : <img className="card-img" src={imgSrc(it.image)} alt="" />)}
                 <div className="card-bd">
                   {it.badge && <span className="card-badge" style={{ "--k": it.color || A }}>{it.badge}</span>}
                   {it.title && <div className="card-t">{it.title}</div>}
@@ -200,7 +210,7 @@ export default function BlockView({ b }) {
         <div className="teams">
           {(b.items || []).map((t, i) => (
             <div className="team" key={i} style={{ "--k": t.color || A }}>
-              <div className="team-logo">{t.logo ? <img src={t.logo} alt="" /> : (t.tag || t.name || "?").slice(0, 3)}</div>
+              <div className="team-logo">{imgSrc(t.logo) ? <img src={imgSrc(t.logo)} alt="" /> : (t.tag || t.name || "?").slice(0, 3)}</div>
               <div className="team-bd">
                 <div className="team-n">{t.name}{t.tag && <span className="team-tag">{t.tag}</span>}</div>
                 {t.note && <div className="team-note">{t.note}</div>}
@@ -216,7 +226,7 @@ export default function BlockView({ b }) {
         <div className="grid" style={{ "--c": b.cols || 2 }}>
           {(b.items || []).map((m, i) => (
             <div className="mem" key={i}>
-              <div className="mem-av">{m.avatar ? <img src={m.avatar} alt="" /> : (m.name || "?").slice(0, 1)}</div>
+              <div className="mem-av">{imgSrc(m.avatar) ? <img src={imgSrc(m.avatar)} alt="" /> : (m.name || "?").slice(0, 1)}</div>
               <div className="mem-bd">
                 <div className="mem-n">{m.name}</div>
                 {m.role && <div className="mem-r">{m.role}</div>}
@@ -251,7 +261,9 @@ export default function BlockView({ b }) {
               <div className="step-bd">
                 {it.title && <div className="step-t">{it.title}</div>}
                 {it.text && <div className="rich sz-sm"><Rich>{it.text}</Rich></div>}
-                {it.image && <img className="step-img" src={it.image} alt="" />}
+                {imgSrc(it.image) && (hasAnno(it.image)
+                  ? <Pic v={it.image} className="step-img" style={{ display: "block", width: "100%", marginTop: 8, borderRadius: 10 }} />
+                  : <img className="step-img" src={imgSrc(it.image)} alt="" />)}
               </div>
             </div>
           ))}
@@ -263,7 +275,7 @@ export default function BlockView({ b }) {
         <div className="grid" style={{ "--c": b.cols || 4 }}>
           {(b.items || []).map((r, i) => (
             <div className="res" key={i} style={{ "--k": r.color || A }}>
-              {r.icon ? <img src={r.icon} alt="" /> : <div className="res-ph" />}
+              {imgSrc(r.icon) ? <img src={imgSrc(r.icon)} alt="" /> : <div className="res-ph" />}
               <div className="res-a">{r.amount}</div>
               <div className="res-n">{r.name}</div>
             </div>

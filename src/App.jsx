@@ -7,6 +7,7 @@ import NavBar from "./components/NavBar.jsx";
 import EventPage from "./event/EventPage.jsx";
 import EventEditor from "./event/EventEditor.jsx";
 import "./event/event.css";
+import "./event/imgedit/imgedit.css";
 
 /* ============================================================
    BigDaddys — app shell. Routes:

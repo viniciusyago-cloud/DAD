@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { Rich } from "./BlockView.jsx";
+import { imgSrc } from "./imgedit/Pic.jsx";
 
 /* ============================================================
    SPECIALISED TRI-ALLIANCE BLOCKS
@@ -191,7 +192,7 @@ export function BattlePlan({ b }) {
   const teams = (b.teams || []).map((t, i) => ({ ...t, _i: i }));
   const capture = splitList(b.capture), defend = splitList(b.defend), entry = splitList(b.entry);
   const mapW = b.mapW || 1920, mapH = b.mapH || 1401;
-  const map = b.map || "/tri/map.jpg";
+  const map = imgSrc(b.map) || "/tri/map.jpg";
   const IcSword = ICONS.sword, IcShield = ICONS.shield, IcFlag = ICONS.flag;
 
   const search = (q) => {
@@ -313,7 +314,11 @@ export function Phases({ b }) {
           <div key={i} className="ta-tl-seg" style={{ background: p.color || "var(--gold)", flexGrow: Number(p.weight) || 1 }} />
         ))}
       </div>
-      {b.marks && <div className="ta-tl-marks">{splitList(b.marks).map((m, i) => <span key={i}>{m}</span>)}</div>}
+      {b.marks && (
+        <div className="ta-tl-marks" style={{ display: "flex", justifyContent: "space-between" }}>
+          {splitList(b.marks).map((m, i) => <span key={i}>{m}</span>)}
+        </div>
+      )}
       <div className="ta-phases">
         {items.map((p, i) => (
           <div key={i} className="ta-phase" style={{ boxShadow: `inset 0 0 0 1px ${p.color || "#ecc25a"}44` }}>
@@ -338,7 +343,7 @@ export function Buildings({ b }) {
       <div className="ta-blds">
         {(b.items || []).map((x, i) => (
           <div key={i} className={`ta-bld${x.hot ? " hot" : ""}`}>
-            {x.img && <img src={x.img} alt={x.name} loading="lazy" />}
+            {imgSrc(x.img) && <img src={imgSrc(x.img)} alt={x.name} loading="lazy" />}
             <div className="ta-bld-body">
               <div className="ta-bld-top"><b>{x.name}</b>{x.pts && <span className="ta-bld-pts">{x.pts}</span>}</div>
               {x.codes && <div className="ta-bld-codes">{x.codes}</div>}
@@ -361,7 +366,7 @@ export function Rules({ b }) {
           const Ic = ICONS[r.icon] || ICONS.star;
           return (
             <div key={i} className="ta-rule">
-              <span className="ta-rule-ic">{r.image ? <img src={r.image} alt="" style={{ width: 20, height: 20 }} /> : <Ic size={18} />}</span>
+              <span className="ta-rule-ic">{imgSrc(r.image) ? <img src={imgSrc(r.image)} alt="" style={{ width: 20, height: 20 }} /> : <Ic size={18} />}</span>
               <div><b>{r.title}</b><p>{r.text}</p></div>
             </div>
           );
@@ -384,14 +389,14 @@ export function Marches({ b }) {
       {(b.noteIcons?.length > 0 || b.note) && (
         <div className="ta-locked">
           {b.noteIcons?.length > 0 && (
-            <div className="ta-locked-icons">{b.noteIcons.map((n, i) => n.src && <img key={i} src={n.src} alt="" />)}</div>
+            <div className="ta-locked-icons">{b.noteIcons.map((n, i) => imgSrc(n.src) && <img key={i} src={imgSrc(n.src)} alt="" />)}</div>
           )}
           {b.note && <div className="ta-p"><Rich>{b.note}</Rich></div>}
         </div>
       )}
       {b.warnText && (
         <div className="ta-avoid">
-          {b.warnImage && <img className="ta-avoid-img" src={b.warnImage} alt="" />}
+          {imgSrc(b.warnImage) && <img className="ta-avoid-img" src={imgSrc(b.warnImage)} alt="" />}
           <div><Rich>{b.warnText}</Rich></div>
         </div>
       )}
@@ -439,7 +444,7 @@ export function BattleCd({ b }) {
         ))}
       </div>
     );
-  } else if (now < end) body = <div className="cd-live">{b.liveIcon && <img src={b.liveIcon} alt="" />}{b.liveText || "BATTLE IN PROGRESS"}</div>;
+  } else if (now < end) body = <div className="cd-live">{imgSrc(b.liveIcon) && <img src={imgSrc(b.liveIcon)} alt="" />}{b.liveText || "BATTLE IN PROGRESS"}</div>;
   else body = <div className="cd-done">{b.doneText || "Battle completed"}</div>;
   return <section className="cd">{b.label && <div className="lbl">{b.label}</div>}{body}</section>;
 }
