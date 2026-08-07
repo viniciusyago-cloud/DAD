@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { Rich } from "./BlockView.jsx";
-import { imgSrc } from "./imgedit/Pic.jsx";
+import Pic, { imgSrc } from "./imgedit/Pic.jsx";
 
 /* ============================================================
    SPECIALISED TRI-ALLIANCE BLOCKS
@@ -307,8 +307,7 @@ export function Phases({ b }) {
   const items = b.items || [];
   const total = items.reduce((s, p) => s + (Number(p.weight) || 1), 0) || 1;
   return (
-    <section className="ta-card">
-      {b.label && <div className="lbl">{b.label}</div>}
+    <>
       <div className="ta-tl">
         {items.map((p, i) => (
           <div key={i} className="ta-tl-seg" style={{ background: p.color || "var(--gold)", flexGrow: Number(p.weight) || 1 }} />
@@ -331,19 +330,18 @@ export function Phases({ b }) {
           </div>
         ))}
       </div>
-    </section>
+    </>
   );
 }
 
 /* ---------- buildings ---------- */
 export function Buildings({ b }) {
   return (
-    <section className="ta-card">
-      {b.label && <div className="lbl">{b.label}</div>}
+    <>
       <div className="ta-blds">
         {(b.items || []).map((x, i) => (
           <div key={i} className={`ta-bld${x.hot ? " hot" : ""}`}>
-            {imgSrc(x.img) && <img src={imgSrc(x.img)} alt={x.name} loading="lazy" />}
+            {imgSrc(x.img) && <Pic v={x.img} alt={x.name} loading="lazy" />}
             <div className="ta-bld-body">
               <div className="ta-bld-top"><b>{x.name}</b>{x.pts && <span className="ta-bld-pts">{x.pts}</span>}</div>
               {x.codes && <div className="ta-bld-codes">{x.codes}</div>}
@@ -352,35 +350,33 @@ export function Buildings({ b }) {
           </div>
         ))}
       </div>
-    </section>
+    </>
   );
 }
 
 /* ---------- rules grid ---------- */
 export function Rules({ b }) {
   return (
-    <section className="ta-card">
-      {b.label && <div className="lbl">{b.label}</div>}
+    <>
       <div className="ta-rules">
         {(b.items || []).map((r, i) => {
           const Ic = ICONS[r.icon] || ICONS.star;
           return (
             <div key={i} className="ta-rule">
-              <span className="ta-rule-ic">{imgSrc(r.image) ? <img src={imgSrc(r.image)} alt="" style={{ width: 20, height: 20 }} /> : <Ic size={18} />}</span>
+              <span className="ta-rule-ic">{imgSrc(r.image) ? <Pic v={r.image} alt="" style={{ width: 20, height: 20 }} /> : <Ic size={18} />}</span>
               <div><b>{r.title}</b><p>{r.text}</p></div>
             </div>
           );
         })}
       </div>
-    </section>
+    </>
   );
 }
 
 /* ---------- marches / squads ---------- */
 export function Marches({ b }) {
   return (
-    <section className="ta-card">
-      {b.label && <div className="lbl">{b.label}</div>}
+    <>
       <div className="ta-squads">
         {(b.items || []).map((s, i) => (
           <div key={i} className={`ta-squad${i === 0 ? " s1" : ""}`}><b>{s.title}</b><span>{s.text}</span></div>
@@ -389,26 +385,25 @@ export function Marches({ b }) {
       {(b.noteIcons?.length > 0 || b.note) && (
         <div className="ta-locked">
           {b.noteIcons?.length > 0 && (
-            <div className="ta-locked-icons">{b.noteIcons.map((n, i) => imgSrc(n.src) && <img key={i} src={imgSrc(n.src)} alt="" />)}</div>
+            <div className="ta-locked-icons">{b.noteIcons.map((n, i) => imgSrc(n.src) && <Pic key={i} v={n.src} alt="" />)}</div>
           )}
           {b.note && <div className="ta-p"><Rich>{b.note}</Rich></div>}
         </div>
       )}
       {b.warnText && (
         <div className="ta-avoid">
-          {imgSrc(b.warnImage) && <img className="ta-avoid-img" src={imgSrc(b.warnImage)} alt="" />}
+          {imgSrc(b.warnImage) && <Pic v={b.warnImage} className="ta-avoid-img" alt="" />}
           <div><Rich>{b.warnText}</Rich></div>
         </div>
       )}
-    </section>
+    </>
   );
 }
 
 /* ---------- how we win: numbered steps ---------- */
 export function HowWeWin({ b }) {
   return (
-    <section className="ta-card">
-      {b.label && <div className="lbl">{b.label}</div>}
+    <>
       <div className="ta-steps">
         {(b.items || []).map((s, i) => (
           <div key={i} className="ta-step">
@@ -417,7 +412,7 @@ export function HowWeWin({ b }) {
           </div>
         ))}
       </div>
-    </section>
+    </>
   );
 }
 
@@ -444,7 +439,7 @@ export function BattleCd({ b }) {
         ))}
       </div>
     );
-  } else if (now < end) body = <div className="cd-live">{imgSrc(b.liveIcon) && <img src={imgSrc(b.liveIcon)} alt="" />}{b.liveText || "BATTLE IN PROGRESS"}</div>;
+  } else if (now < end) body = <div className="cd-live">{imgSrc(b.liveIcon) && <Pic v={b.liveIcon} alt="" />}{b.liveText || "BATTLE IN PROGRESS"}</div>;
   else body = <div className="cd-done">{b.doneText || "Battle completed"}</div>;
-  return <section className="cd">{b.label && <div className="lbl">{b.label}</div>}{body}</section>;
+  return <div className="cd">{body}</div>;
 }

@@ -6,6 +6,9 @@ import React from "react";
      { src, crop:{x,y,w,h}, layers:[...] }
    Coordinates are normalised 0..1 against the (cropped) image,
    so annotations scale with any display size.
+
+   <Pic> is used EVERYWHERE an image is drawn, so a crop or an
+   annotation always shows up — never silently dropped.
    ============================================================ */
 
 export const normImg = (v) =>
@@ -15,6 +18,29 @@ export const normImg = (v) =>
 
 export const imgSrc = (v) => normImg(v).src;
 export const hasAnno = (v) => { const n = normImg(v); return !!(n.layers.length || n.crop); };
+
+/* --- natural size, cached and cache-safe (onLoad can miss cached imgs) --- */
+const natCache = new Map();
+export function useNatural(src, enabled = true) {
+  const [nat, setNat] = React.useState(() => (src ? natCache.get(src) || null : null));
+  React.useEffect(() => {
+    if (!src || !enabled) return;
+    const hit = natCache.get(src);
+    if (hit) { setNat(hit); return; }
+    let alive = true;
+    const im = new Image();
+    im.onload = () => {
+      const s = { w: im.naturalWidth || 1600, h: im.naturalHeight || 900 };
+      natCache.set(src, s);
+      if (alive) setNat(s);
+    };
+    im.onerror = () => { if (alive) setNat({ w: 1600, h: 900 }); };
+    im.src = src;
+    if (im.complete && im.naturalWidth) im.onload();
+    return () => { alive = false; };
+  }, [src, enabled]);
+  return nat;
+}
 
 export const ANIMS = [
   { v: "", l: "Nenhuma" },
@@ -33,7 +59,7 @@ const animStyle = (l) => ({
   animationDuration: l.dur ? `${l.dur}s` : undefined,
 });
 
-/* --- one layer --- */
+/* --- one annotation layer --- */
 function Layer({ l, W, H }) {
   const X = (x) => x * W, Y = (y) => y * H;
   const c = l.color || "#ecc25a";
@@ -42,7 +68,7 @@ function Layer({ l, W, H }) {
 
   switch (l.type) {
     case "pin": {
-      const r = (l.size || 14);
+      const r = l.size || 14;
       return (
         <g className={`an-l${cls}`} style={st} transform={`translate(${X(l.x)} ${Y(l.y)})`}>
           <circle r={r + 4} fill="#0d1218" opacity="0.55" />
@@ -72,8 +98,8 @@ function Layer({ l, W, H }) {
       );
     }
     case "route": {
-      const pts = (l.pts || []).map(([x, y]) => `${X(x)},${Y(y)}`).join(" ");
       if ((l.pts || []).length < 2) return null;
+      const pts = l.pts.map(([x, y]) => `${X(x)},${Y(y)}`).join(" ");
       const w = l.width || 6;
       return (
         <g className={`an-l${cls}`} style={st}>
@@ -121,59 +147,57 @@ function Layer({ l, W, H }) {
   }
 }
 
-/* --- the picture --- */
-export default function Pic({ v, className, style, alt = "", onLoadSize }) {
+/* --- the picture ---
+   fit="auto"  → block element, keeps the cropped aspect ratio (default)
+   fit="fill"  → absolutely fills a sized parent (avatars, icon boxes)
+   fit="cover" → fills the parent box, cropping to it                     */
+export default function Pic({ v, className, style, alt = "", fit = "auto", loading }) {
   const { src, crop, layers } = normImg(v);
-  const [nat, setNat] = React.useState(null);
+  const needsBox = !!(crop || layers.length);
+  const nat = useNatural(src, needsBox);
   if (!src) return null;
 
-  // Natural size drives the SVG viewBox; falls back to a sane ratio.
-  const NW = nat?.w || 1600, NH = nat?.h || 900;
-  const c = crop || { x: 0, y: 0, w: 1, h: 1 };
-  const W = NW * c.w, H = NH * c.h;
+  // Plain image: nothing to overlay, so don't disturb the surrounding layout.
+  if (!needsBox || !nat) {
+    return <img className={className} style={style} src={src} alt={alt} loading={loading} />;
+  }
 
-  const wrapStyle = { position: "relative", overflow: "hidden", ...style };
-  const inner = {
-    position: "relative",
-    width: `${100 / c.w}%`,
-    marginLeft: `${(-c.x * 100) / c.w}%`,
-    marginTop: `${(-c.y * 100) / c.h}%`,
-    paddingBottom: 0,
-  };
+  const c = crop || { x: 0, y: 0, w: 1, h: 1 };
+  const W = Math.max(1, nat.w * c.w), H = Math.max(1, nat.h * c.h);
+
+  const wrap =
+    fit === "fill"
+      ? { position: "absolute", inset: 0, overflow: "hidden", ...style }
+      : fit === "cover"
+        ? { position: "relative", display: "block", width: "100%", height: "100%", overflow: "hidden", ...style }
+        : { position: "relative", display: "block", width: "100%", aspectRatio: `${W} / ${H}`, overflow: "hidden", ...style };
 
   return (
-    <span className={className} style={wrapStyle}>
-      <span style={{ display: "block", position: "relative", width: "100%", paddingTop: `${(H / W) * 100}%` }}>
-        <span style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-          <img
-            src={src} alt={alt}
-            onLoad={(e) => {
-              const s = { w: e.target.naturalWidth || 1600, h: e.target.naturalHeight || 900 };
-              setNat(s); onLoadSize?.(s);
-            }}
-            style={{
-              position: "absolute", display: "block", border: 0,
-              width: `${100 / c.w}%`, height: `${100 / c.h}%`,
-              left: `${(-c.x * 100) / c.w}%`, top: `${(-c.y * 100) / c.h}%`,
-              objectFit: "cover",
-            }}
-          />
-          {layers.length > 0 && (
-            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none"
-                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} aria-hidden="true">
-              <defs>
-                {layers.filter((l) => l.type === "route" || l.type === "arrow").map((l) => (
-                  <marker key={l.id} id={`ah-${l.id}`} viewBox="0 0 10 10" refX="7" refY="5"
-                          markerWidth="2.6" markerHeight="2.6" orient="auto-start-reverse" markerUnits="strokeWidth">
-                    <path d="M0 0 L10 5 L0 10 z" fill={l.color || "#ecc25a"} />
-                  </marker>
-                ))}
-              </defs>
-              {layers.map((l) => <Layer key={l.id} l={l} W={W} H={H} />)}
-            </svg>
-          )}
-        </span>
-      </span>
+    <span className={className} style={wrap}>
+      <img
+        src={src} alt={alt} loading={loading}
+        style={{
+          position: "absolute", display: "block", border: 0,
+          width: `${100 / c.w}%`, height: `${100 / c.h}%`,
+          left: `${(-c.x * 100) / c.w}%`, top: `${(-c.y * 100) / c.h}%`,
+          objectFit: "cover",
+        }}
+      />
+      {layers.length > 0 && (
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none"
+             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+             aria-hidden="true">
+          <defs>
+            {layers.filter((l) => l.type === "route" || l.type === "arrow").map((l) => (
+              <marker key={l.id} id={`ah-${l.id}`} viewBox="0 0 10 10" refX="7" refY="5"
+                      markerWidth="2.6" markerHeight="2.6" orient="auto-start-reverse" markerUnits="strokeWidth">
+                <path d="M0 0 L10 5 L0 10 z" fill={l.color || "#ecc25a"} />
+              </marker>
+            ))}
+          </defs>
+          {layers.map((l) => <Layer key={l.id} l={l} W={W} H={H} />)}
+        </svg>
+      )}
     </span>
   );
 }

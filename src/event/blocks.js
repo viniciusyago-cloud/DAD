@@ -190,7 +190,6 @@ export const BLOCKS = {
       done: "O evento começou!" },
     fields: [
       { key: "target", type: "datetime", label: "Data e hora do evento" },
-      { key: "label", type: "text", label: "Rótulo" },
       { key: "done", type: "text", label: "Texto quando chegar a hora" },
     ],
   },
@@ -207,8 +206,7 @@ export const BLOCKS = {
       { key: "items", type: "list", label: "Indicadores", addLabel: "Adicionar KPI",
         titleKey: "label", item: [
           { key: "icon", type: "image", label: "Ícone" },
-          { key: "label", type: "text", label: "Rótulo" },
-          { key: "value", type: "text", label: "Valor" },
+              { key: "value", type: "text", label: "Valor" },
           { key: "color", type: "color", label: "Cor" },
         ] },
     ],
@@ -388,11 +386,10 @@ export const BLOCKS = {
   },
 
   battlecd: {
-    label: "Contagem de batalha", group: "Batalha", raw: true,
+    label: "Contagem de batalha", group: "Batalha",
     defaults: { label: "Battle starts in", target: "", durationMin: 60,
       liveText: "BATTLE IN PROGRESS", liveIcon: "/tri/icons/event.png", doneText: "Battle completed — next cycle soon" },
     fields: [
-      { key: "label", type: "text", label: "Rótulo" },
       { key: "target", type: "datetime", label: "Início da batalha" },
       { key: "durationMin", type: "number", label: "Duração (min)", min: 5, max: 600 },
       { key: "liveText", type: "text", label: "Texto durante a batalha" },
@@ -401,10 +398,9 @@ export const BLOCKS = {
     ],
   },
   howwewin: {
-    label: "Como vencemos", group: "Batalha", raw: true,
+    label: "Como vencemos", group: "Batalha",
     defaults: { label: "How we win", items: [{ title: "Título", text: "Explicação." }] },
     fields: [
-      { key: "label", type: "text", label: "Rótulo da seção" },
       { key: "items", type: "list", label: "Passos", addLabel: "Adicionar passo", titleKey: "title", item: [
         { key: "title", type: "text", label: "Título" },
         { key: "text", type: "textarea", label: "Explicação" },
@@ -454,11 +450,10 @@ export const BLOCKS = {
     ],
   },
   phases: {
-    label: "Fases da batalha", group: "Batalha", raw: true,
+    label: "Fases da batalha", group: "Batalha",
     defaults: { label: "The phases", marks: "0, 20, 40, 60",
       items: [{ name: "Fase", span: "0–20 min", color: "#ecc25a", weight: 20, points: "Ponto 1\nPonto 2" }] },
     fields: [
-      { key: "label", type: "text", label: "Rótulo da seção" },
       { key: "marks", type: "text", label: "Marcas de tempo (separe por vírgula)" },
       { key: "items", type: "list", label: "Fases", addLabel: "Adicionar fase", titleKey: "name", item: [
         { key: "name", type: "text", label: "Nome" },
@@ -470,10 +465,9 @@ export const BLOCKS = {
     ],
   },
   buildings: {
-    label: "Prédios", group: "Batalha", raw: true,
+    label: "Prédios", group: "Batalha",
     defaults: { label: "The buildings", items: [{ img: "", name: "Prédio", codes: "", pts: "", note: "", hot: false }] },
     fields: [
-      { key: "label", type: "text", label: "Rótulo da seção" },
       { key: "items", type: "list", label: "Prédios", addLabel: "Adicionar prédio", titleKey: "name", item: [
         { key: "img", type: "image", label: "Imagem" },
         { key: "name", type: "text", label: "Nome" },
@@ -485,10 +479,9 @@ export const BLOCKS = {
     ],
   },
   rules: {
-    label: "Regras", group: "Batalha", raw: true,
+    label: "Regras", group: "Batalha",
     defaults: { label: "Key rules", items: [{ icon: "star", image: "", title: "Regra", text: "Descrição." }] },
     fields: [
-      { key: "label", type: "text", label: "Rótulo da seção" },
       { key: "items", type: "list", label: "Regras", addLabel: "Adicionar regra", titleKey: "title", item: [
         { key: "icon", type: "select", label: "Ícone", options: [
           { v: "coins", l: "Moedas" }, { v: "bolt", l: "Energia" }, { v: "back", l: "Recuar" },
@@ -502,11 +495,10 @@ export const BLOCKS = {
     ],
   },
   marches: {
-    label: "Marchas / Esquadrões", group: "Batalha", raw: true,
+    label: "Marchas / Esquadrões", group: "Batalha",
     defaults: { label: "Your marches", items: [{ title: "March 1", text: "Seus melhores heróis" }],
       noteIcons: [], note: "", warnImage: "", warnText: "" },
     fields: [
-      { key: "label", type: "text", label: "Rótulo da seção" },
       { key: "items", type: "list", label: "Marchas", addLabel: "Adicionar marcha", titleKey: "title", item: [
         { key: "title", type: "text", label: "Título" },
         { key: "text", type: "text", label: "Descrição" },

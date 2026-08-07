@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback } from "react";
 import { supabase } from "../../supabaseClient.js";
-import { normImg, ANIMS } from "./Pic.jsx";
+import { normImg, ANIMS, useNatural } from "./Pic.jsx";
 import { PALETTE } from "../blocks.js";
+import AssetPicker from "../AssetPicker.jsx";
 
 /* ============================================================
    IMAGE / TACTICAL ANNOTATION EDITOR
@@ -21,12 +22,6 @@ const TOOLS = [
   { k: "crop",   l: "Cortar",     d: "M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14" },
 ];
 
-const ICON_LIB = [
-  "/tri/icons/attack.png", "/tri/icons/defense.png", "/tri/icons/lead.png", "/tri/icons/points.png",
-  "/tri/icons/energy.png", "/tri/icons/heal.png", "/tri/icons/retreat.png", "/tri/icons/block.png",
-  "/tri/icons/transit.png", "/tri/icons/call.png", "/tri/icons/event.png", "/tri/icons/diana.png",
-  "/troops/infantry.png", "/troops/cavalry.png", "/troops/archer.png",
-];
 
 const uid = () => `l${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
@@ -42,11 +37,11 @@ export default function ImageEditor({ value, onSave, onClose }) {
   const [cropDraft, setCropDraft] = useState(null);
   const [busy, setBusy] = useState(false);
   const [iconPick, setIconPick] = useState(false);
-  const [nat, setNat] = useState({ w: 1600, h: 900 });
   const stage = useRef(null);
   const drag = useRef(null);
   const fileRef = useRef(null);
 
+  const nat = useNatural(src) || { w: 1600, h: 900 };
   const cur = layers.find((l) => l.id === sel) || null;
   const c = crop || { x: 0, y: 0, w: 1, h: 1 };
 
@@ -217,7 +212,6 @@ export default function ImageEditor({ value, onSave, onClose }) {
                    onPointerUp={onUp} onPointerLeave={onUp}
                    style={{ aspectRatio: `${W} / ${H}`, cursor: tool === "select" ? "default" : "crosshair" }}>
                 <img src={src} alt="" draggable="false"
-                     onLoad={(e) => setNat({ w: e.target.naturalWidth || 1600, h: e.target.naturalHeight || 900 })}
                      style={{ position: "absolute", width: `${100 / c.w}%`, height: `${100 / c.h}%`,
                               left: `${(-c.x * 100) / c.w}%`, top: `${(-c.y * 100) / c.h}%`, objectFit: "cover" }} />
                 <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="ie-svg">
@@ -322,19 +316,12 @@ export default function ImageEditor({ value, onSave, onClose }) {
         )}
 
         {iconPick && (
-          <div className="ie-modal ie-sub" onClick={(e) => { if (e.target === e.currentTarget) { setIconPick(false); setTool("select"); } }}>
-            <div className="ie-iconpick">
-              <b>Escolha um ícone</b>
-              <div className="ie-icongrid">
-                {ICON_LIB.map((s) => (
-                  <button key={s} onClick={() => {
-                    add({ type: "icon", x: iconPick.x, y: iconPick.y, src: s, size: 44, anim: "" });
-                    setIconPick(false); setTool("select");
-                  }}><img src={s} alt="" /></button>
-                ))}
-              </div>
-            </div>
-          </div>
+          <AssetPicker title="Escolha um ícone"
+            onClose={() => { setIconPick(false); setTool("select"); }}
+            onPick={(url) => {
+              add({ type: "icon", x: iconPick.x, y: iconPick.y, src: url, size: 44, anim: "" });
+              setIconPick(false); setTool("select");
+            }} />
         )}
 
         <input ref={fileRef} type="file" accept="image/*" hidden

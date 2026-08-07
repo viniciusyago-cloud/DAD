@@ -123,7 +123,8 @@ function chrome(b) {
 }
 
 function Title({ b }) {
-  if (!b._title && !imgSrc(b._titleIcon)) return null;
+  const text = b._title || b.label || "";
+  if (!text && !imgSrc(b._titleIcon)) return null;
   const st = {
     color: b._titleColor || undefined,
     fontFamily: FONT_STACK[b._titleFont || "sans"],
@@ -135,14 +136,17 @@ function Title({ b }) {
   };
   return (
     <div className={`blk-title${b._titleRule ? " has-rule" : ""}`} style={st}>
-      {imgSrc(b._titleIcon) && <img src={imgSrc(b._titleIcon)} alt="" />}
-      {b._title && <span>{b._title}</span>}
+      {imgSrc(b._titleIcon) && <Pic v={b._titleIcon} alt="" />}
+      {text && <span>{text}</span>}
     </div>
   );
 }
 
 /* --- the renderer --- */
+const PANEL_BY_DEFAULT = new Set(["phases", "buildings", "rules", "marches", "howwewin", "battlecd", "squads"]);
+
 export default function BlockView({ b }) {
+  if (PANEL_BY_DEFAULT.has(b.type) && b._bg == null) b = { ...b, _bg: "panel" };
   const { cls, style, A } = chrome(b);
   const [ref, seen] = useReveal(!!b._anim);
   const animCls = b._anim ? (seen ? ` rv rv-${b._anim} in` : ` rv rv-${b._anim}`) : "";
@@ -151,7 +155,7 @@ export default function BlockView({ b }) {
     <section ref={ref} className={cls + animCls} style={style}>
       {imgSrc(b._bgImage) && (b._bg === "image") && (
         <>
-          <img className="blk-bgimg" src={imgSrc(b._bgImage)} alt="" />
+          <Pic v={b._bgImage} className="blk-bgimg" fit="fill" alt="" />
           <span className="blk-bgdim" style={{ opacity: (b._bgDim ?? 45) / 100 }} />
         </>
       )}
@@ -162,15 +166,16 @@ export default function BlockView({ b }) {
     </section>
   );
 
-  /* specialised battle blocks bring their own markup + styles */
+  /* battleplan is a composite of several sections — it keeps its own markup */
+  if (b.type === "battleplan") return <BattlePlan b={b} />;
+
   switch (b.type) {
-    case "battleplan": return <BattlePlan b={b} />;
-    case "phases":     return <Phases b={b} />;
-    case "buildings":  return <Buildings b={b} />;
-    case "rules":      return <Rules b={b} />;
-    case "marches":    return <Marches b={b} />;
-    case "howwewin":   return <HowWeWin b={b} />;
-    case "battlecd":   return <BattleCd b={b} />;
+    case "phases":    return wrap(<Phases b={b} />);
+    case "buildings": return wrap(<Buildings b={b} />);
+    case "rules":     return wrap(<Rules b={b} />);
+    case "marches":   return wrap(<Marches b={b} />);
+    case "howwewin":  return wrap(<HowWeWin b={b} />);
+    case "battlecd":  return wrap(<BattleCd b={b} />);
     default: break;
   }
 
@@ -178,7 +183,7 @@ export default function BlockView({ b }) {
     case "hero":
       return (
         <section className={`blk blk-hero al-${b._align || "center"}`} style={{ ...style, height: b.height || 280 }}>
-          {imgSrc(b.image) && <img className="hero-bg" src={imgSrc(b.image)} alt="" />}
+          {imgSrc(b.image) && <Pic v={b.image} className="hero-bg" fit="fill" alt="" />}
           <div className="hero-scrim" style={{ opacity: (b.overlay ?? 60) / 100 }} />
           <div className="hero-in">
             {b.eyebrow && <div className="hero-eyebrow">{b.eyebrow}</div>}
@@ -206,9 +211,8 @@ export default function BlockView({ b }) {
       return wrap(
         <figure className={b.full ? "fig full" : "fig"}>
           {imgSrc(b.src)
-            ? (hasAnno(b.src)
-                ? <Pic v={b.src} alt={b.caption || ""} style={{ display: "block", width: "100%", borderRadius: b.radius ?? 12 }} />
-                : <img src={imgSrc(b.src)} alt={b.caption || ""} style={{ borderRadius: b.radius ?? 12 }} />)
+            ? <Pic v={b.src} alt={b.caption || ""}
+                   style={{ display: "block", width: "100%", borderRadius: b.radius ?? 12 }} />
             : <div className="ph">No image</div>}
           {b.caption && <figcaption>{b.caption}</figcaption>}
         </figure>,
@@ -220,9 +224,7 @@ export default function BlockView({ b }) {
           {(b.items || []).map((it, i) => (
             <figure className="fig" key={i}>
               {imgSrc(it.src)
-                ? (hasAnno(it.src)
-                    ? <Pic v={it.src} alt={it.caption || ""} style={{ display: "block", width: "100%", borderRadius: 10 }} />
-                    : <img src={imgSrc(it.src)} alt={it.caption || ""} />)
+                ? <Pic v={it.src} alt={it.caption || ""} style={{ display: "block", width: "100%", borderRadius: 10 }} />
                 : <div className="ph">Image</div>}
               {it.caption && <figcaption>{it.caption}</figcaption>}
             </figure>
@@ -252,7 +254,7 @@ export default function BlockView({ b }) {
         <div className="grid" style={{ "--c": b.cols || 3 }}>
           {(b.items || []).map((it, i) => (
             <div className="kpi" key={i} style={{ "--k": it.color || A }}>
-              {imgSrc(it.icon) && <img src={imgSrc(it.icon)} alt="" />}
+              {imgSrc(it.icon) && <Pic v={it.icon} alt="" />}
               <div className="kpi-v">{it.value}</div>
               <div className="kpi-l">{it.label}</div>
             </div>
@@ -266,9 +268,7 @@ export default function BlockView({ b }) {
           {(b.items || []).map((it, i) => {
             const inner = (
               <>
-                {imgSrc(it.image) && (hasAnno(it.image)
-                  ? <Pic v={it.image} className="card-img" style={{ display: "block", width: "100%" }} />
-                  : <img className="card-img" src={imgSrc(it.image)} alt="" />)}
+                {imgSrc(it.image) && <Pic v={it.image} className="card-img" alt="" />}
                 <div className="card-bd">
                   {it.badge && <span className="card-badge" style={{ "--k": it.color || A }}>{it.badge}</span>}
                   {it.title && <div className="card-t">{it.title}</div>}
@@ -291,7 +291,7 @@ export default function BlockView({ b }) {
         <div className="teams">
           {(b.items || []).map((t, i) => (
             <div className="team" key={i} style={{ "--k": t.color || A }}>
-              <div className="team-logo">{imgSrc(t.logo) ? <img src={imgSrc(t.logo)} alt="" /> : (t.tag || t.name || "?").slice(0, 3)}</div>
+              <div className="team-logo">{imgSrc(t.logo) ? <Pic v={t.logo} fit="fill" alt="" /> : (t.tag || t.name || "?").slice(0, 3)}</div>
               <div className="team-bd">
                 <div className="team-n">{t.name}{t.tag && <span className="team-tag">{t.tag}</span>}</div>
                 {t.note && <div className="team-note">{t.note}</div>}
@@ -307,7 +307,7 @@ export default function BlockView({ b }) {
         <div className="grid" style={{ "--c": b.cols || 2 }}>
           {(b.items || []).map((m, i) => (
             <div className="mem" key={i}>
-              <div className="mem-av">{imgSrc(m.avatar) ? <img src={imgSrc(m.avatar)} alt="" /> : (m.name || "?").slice(0, 1)}</div>
+              <div className="mem-av">{imgSrc(m.avatar) ? <Pic v={m.avatar} fit="fill" alt="" /> : (m.name || "?").slice(0, 1)}</div>
               <div className="mem-bd">
                 <div className="mem-n">{m.name}</div>
                 {m.role && <div className="mem-r">{m.role}</div>}
@@ -342,9 +342,8 @@ export default function BlockView({ b }) {
               <div className="step-bd">
                 {it.title && <div className="step-t">{it.title}</div>}
                 {it.text && <div className="rich sz-sm"><Rich>{it.text}</Rich></div>}
-                {imgSrc(it.image) && (hasAnno(it.image)
-                  ? <Pic v={it.image} className="step-img" style={{ display: "block", width: "100%", marginTop: 8, borderRadius: 10 }} />
-                  : <img className="step-img" src={imgSrc(it.image)} alt="" />)}
+                {imgSrc(it.image) && <Pic v={it.image} className="step-img" alt=""
+                    style={{ display: "block", width: "100%", marginTop: 8, borderRadius: 10 }} />}
               </div>
             </div>
           ))}
@@ -356,7 +355,7 @@ export default function BlockView({ b }) {
         <div className="grid" style={{ "--c": b.cols || 4 }}>
           {(b.items || []).map((r, i) => (
             <div className="res" key={i} style={{ "--k": r.color || A }}>
-              {imgSrc(r.icon) ? <img src={imgSrc(r.icon)} alt="" /> : <div className="res-ph" />}
+              {imgSrc(r.icon) ? <Pic v={r.icon} alt="" /> : <div className="res-ph" />}
               <div className="res-a">{r.amount}</div>
               <div className="res-n">{r.name}</div>
             </div>
@@ -418,7 +417,7 @@ export default function BlockView({ b }) {
                 {(sq.heroes || []).map((h, j) => (
                   <div className="hero" key={j}>
                     <div className="hero-av">
-                      {imgSrc(h.icon) ? <img src={imgSrc(h.icon)} alt="" /> : <span>{(h.name || "?").slice(0, 1)}</span>}
+                      {imgSrc(h.icon) ? <Pic v={h.icon} fit="fill" alt="" /> : <span>{(h.name || "?").slice(0, 1)}</span>}
                     </div>
                     {h.name && <div className="hero-n">{h.name}</div>}
                     {h.role && <div className="hero-r">{h.role}</div>}

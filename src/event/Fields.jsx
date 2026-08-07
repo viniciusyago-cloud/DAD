@@ -3,6 +3,7 @@ import { supabase } from "../supabaseClient.js";
 import { PALETTE } from "./blocks.js";
 import ImageEditor from "./imgedit/ImageEditor.jsx";
 import { imgSrc, hasAnno } from "./imgedit/Pic.jsx";
+import AssetPicker from "./AssetPicker.jsx";
 
 /* ============================================================
    SCHEMA-DRIVEN FIELD EDITORS
@@ -10,54 +11,98 @@ import { imgSrc, hasAnno } from "./imgedit/Pic.jsx";
    the block registry.
    ============================================================ */
 
-/* ---------- image: paste a URL or upload to Supabase Storage ---------- */
+/* ---------- image: upload from device (drag / paste / pick) or URL ---------- */
 function ImageField({ value, onChange }) {
   const fileRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [edit, setEdit] = useState(false);
+  const [drag, setDrag] = useState(false);
+  const [showUrl, setShowUrl] = useState(false);
+  const [lib, setLib] = useState(false);
 
   const upload = async (file) => {
     if (!file) return;
+    if (!/^(image|video)\//.test(file.type)) { setErr("Escolha uma imagem, GIF ou vídeo."); return; }
+    if (file.size > 25 * 1024 * 1024) { setErr("Arquivo muito grande (máx. 25 MB)."); return; }
     setBusy(true); setErr("");
     try {
-      const ext = (file.name.split(".").pop() || "png").toLowerCase();
+      const ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
       const path = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const { error } = await supabase.storage.from("event-assets").upload(path, file, {
-        cacheControl: "31536000", upsert: false,
+        cacheControl: "31536000", upsert: false, contentType: file.type || undefined,
       });
       if (error) throw error;
       const { data } = supabase.storage.from("event-assets").getPublicUrl(path);
       onChange(data.publicUrl);
     } catch (e) {
       console.error(e);
-      setErr("Falha no upload. Você ainda pode colar uma URL.");
+      setErr("Falha no upload. Tente de novo ou cole uma URL.");
     } finally { setBusy(false); }
   };
 
+  const onDrop = (e) => {
+    e.preventDefault(); setDrag(false);
+    const f = e.dataTransfer?.files?.[0];
+    if (f) upload(f);
+  };
+  const onPaste = (e) => {
+    const item = [...(e.clipboardData?.items || [])].find((i) => i.type.startsWith("image/"));
+    if (item) { e.preventDefault(); upload(item.getAsFile()); }
+  };
+
   const url = imgSrc(value);
+
   return (
     <div className="f-img">
-      <div className="f-img-row">
-        <div className="f-img-prev">
-          {url ? <img src={url} alt="" /> : <span>—</span>}
-          {hasAnno(value) && <span className="f-img-badge">anotada</span>}
-        </div>
-        <div className="f-img-ctl">
-          <input className="f-in" placeholder="Cole uma URL de imagem/GIF"
-                 value={typeof value === "string" ? value : url}
-                 onChange={(e) => onChange(e.target.value)} />
-          <div className="f-img-btns">
-            <button type="button" className="f-btn" onClick={() => fileRef.current?.click()} disabled={busy}>
-              {busy ? "Enviando…" : "Enviar"}
-            </button>
-            <button type="button" className="f-btn f-btn-edit" onClick={() => setEdit(true)}>
-              {hasAnno(value) ? "Editar anotações" : "Editar imagem"}
-            </button>
-            {url && <button type="button" className="f-btn f-btn-x" onClick={() => onChange("")}>Limpar</button>}
+      <div
+        className={`f-drop${drag ? " over" : ""}${url ? " has" : ""}`}
+        tabIndex={0}
+        onClick={() => !busy && fileRef.current?.click()}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileRef.current?.click(); } }}
+        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={onDrop}
+        onPaste={onPaste}
+        role="button"
+        aria-label="Enviar imagem do aparelho"
+      >
+        {url ? (
+          <>
+            <img className="f-drop-img" src={url} alt="" />
+            {hasAnno(value) && <span className="f-img-badge">anotada</span>}
+            <span className="f-drop-over">Trocar imagem</span>
+          </>
+        ) : (
+          <div className="f-drop-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                 strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 16V4M12 4 7 9M12 4l5 5" /><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+            </svg>
+            <b>{busy ? "Enviando…" : "Enviar do aparelho"}</b>
+            <span>toque para escolher · arraste · ou cole (Ctrl+V)</span>
           </div>
-        </div>
+        )}
+        {busy && <span className="f-drop-busy">Enviando…</span>}
       </div>
+
+      <div className="f-img-btns">
+        <button type="button" className="f-btn f-btn-edit" onClick={() => setEdit(true)}>
+          {hasAnno(value) ? "Editar anotações" : "Editar imagem"}
+        </button>
+        <button type="button" className="f-btn f-btn-lib" onClick={() => setLib(true)}>Biblioteca</button>
+        <button type="button" className="f-btn" onClick={() => setShowUrl((v) => !v)}>
+          {showUrl ? "Ocultar URL" : "URL"}
+        </button>
+        {url && <button type="button" className="f-btn f-btn-x" onClick={() => onChange("")}>Limpar</button>}
+      </div>
+
+      {showUrl && (
+        <input className="f-in" style={{ marginTop: 7 }} placeholder="https://… (imagem, GIF ou vídeo)"
+               value={typeof value === "string" ? value : url}
+               onChange={(e) => onChange(e.target.value)} />
+      )}
+
       {err && <div className="f-err">{err}</div>}
       <input ref={fileRef} type="file" accept="image/*,video/mp4" hidden
              onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ""; }} />
@@ -65,6 +110,8 @@ function ImageField({ value, onChange }) {
         <ImageEditor value={value} onClose={() => setEdit(false)}
                      onSave={(v) => { onChange(v); setEdit(false); }} />
       )}
+      {lib && <AssetPicker onClose={() => setLib(false)}
+                           onPick={(url) => { onChange(url); setLib(false); }} />}
     </div>
   );
 }
