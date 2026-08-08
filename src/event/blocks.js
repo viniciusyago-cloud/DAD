@@ -109,6 +109,9 @@ export const STYLE_FIELDS = [
   { key: "_scale", type: "select", label: "Tamanho do conteúdo", options: [
     { v: "sm", l: "Pequeno" }, { v: "md", l: "Normal" }, { v: "lg", l: "Grande" } ] },
   { key: "_full", type: "toggle", label: "Sangrar até as bordas" },
+  { key: "_gap", type: "select", label: "Espaço até o bloco de baixo", default: "md", options: [
+    { v: "none", l: "Colado" }, { v: "xs", l: "Mínimo" }, { v: "sm", l: "Curto" },
+    { v: "md", l: "Normal" }, { v: "lg", l: "Amplo" }, { v: "xl", l: "Muito amplo" } ] },
 
   { type: "heading", label: "Animação" },
   { key: "_anim", type: "select", label: "Entrada (ao rolar)", options: ANIM_IN },
@@ -121,7 +124,7 @@ const baseStyle = {
   _titleWeight: 700, _titleCase: "upper", _titleTrack: 20, _titleAlign: "left", _titleRule: false,
   _bg: "none", _bgColor: "", _bgColor2: "", _bgAngle: 180, _bgImage: "", _bgDim: 45,
   _frame: "none", _frameColor: "", _radius: 14, _shadow: "none",
-  _accent: "#ecc25a", _align: "left", _pad: "md", _scale: "md", _full: false,
+  _accent: "#ecc25a", _align: "left", _pad: "md", _scale: "md", _full: false, _gap: "md",
   _anim: "", _animDelay: 0, _loop: "",
 };
 

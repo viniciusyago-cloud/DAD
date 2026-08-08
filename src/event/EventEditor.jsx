@@ -69,11 +69,10 @@ export default function EventEditor() {
           setErr(`"${slug}" é um endereço reservado do site — não dá para criar uma página aqui.`);
           setStatus("error"); return;
         } else {
-          const fresh = normalize(null);
-          const { data: made, error: e2 } = await supabase.from("event_pages")
-            .insert({ slug, title: "New event", doc: fresh }).select().single();
-          if (e2) throw e2;
-          setPageId(made.id); setTitle(made.title); setDoc(fresh);
+          /* Don't create a page just because someone opened an editor URL: a
+             typo, or a stale tab pointing at a page that was deleted, used to
+             silently mint a stray "New event" — and it appeared in the menu. */
+          setStatus("missing"); return;
         }
         setStatus("saved");
       } catch (e) { console.error(e); setErr("Não consegui carregar. A migration v4 foi aplicada?"); setStatus("error"); }
@@ -105,7 +104,27 @@ export default function EventEditor() {
     return () => document.removeEventListener("click", close);
   }, []);
 
+  /* New pages stay out of the menu until the owner opts in — only whoever has
+     the link should reach them. */
+  const createPage = async () => {
+    const fresh = normalize(null);
+    const { data: made, error } = await supabase.from("event_pages")
+      .insert({ slug, title: "New event", doc: fresh, in_nav: false }).select().single();
+    if (error) { console.error(error); setErr("Não consegui criar a página."); setStatus("error"); return; }
+    setPageId(made.id); setTitle(made.title); setNewSlug(made.slug);
+    setNavLabel(made.title); setInNav(false); setDoc(fresh); setStatus("saved");
+  };
+
   if (status === "loading") return <div className="ev-state">Carregando editor…</div>;
+  if (status === "missing") {
+    return (
+      <div className="ev-state">
+        <p>Não existe nenhuma página em <b>/{slug}</b>.</p>
+        <button className="ev-btn-gold" onClick={createPage}>Criar esta página</button>
+        <p className="ev-state-hint">Ela nasce fora do menu — só quem tiver o link chega nela.</p>
+      </div>
+    );
+  }
   if (!doc) return <div className="ev-state err">{err}</div>;
 
   const tabIdx = doc.tabs.findIndex((t) => t.id === area);
@@ -273,7 +292,10 @@ export default function EventEditor() {
                 .filter((f) => !f.when || f.when(current))
                 .map((f) => (
                 <React.Fragment key={f.key || `h-${f.label}`}>
-                  <Field field={f} value={current[f.key]}
+                  {/* Fall back to the field's own default so a control added
+                      after a page was built still shows the value in force,
+                      instead of the first option in its list. */}
+                  <Field field={f} value={current[f.key] ?? f.default}
                          onChange={(v) => patch(current.id, { [f.key]: v })} />
                   {/* Nothing to style until the section has a title, and a
                       control that silently does nothing reads as broken. */}

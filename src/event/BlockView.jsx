@@ -77,6 +77,7 @@ function chrome(b) {
     "blk", `blk-${b.type}`,
     `bg-${b._bg || "none"}`, `pad-${b._pad || "md"}`, `al-${b._align || "left"}`,
     `fr-${b._frame || "none"}`, `sh-${b._shadow || "none"}`, `sc-${b._scale || "md"}`,
+    `gap-${b._gap || "md"}`,
     b._full ? "blk-full" : "",
     b._loop ? `lp-${b._loop}` : "",
   ].filter(Boolean);
