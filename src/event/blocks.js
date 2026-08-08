@@ -599,8 +599,9 @@ export const BLOCKS = {
     ],
   },
   battleplan: {
-    label: "Plano de batalha (mapa + lanes)", group: "Batalha", raw: true,
+    label: "Plano de batalha (mapa + lanes)", group: "Batalha",
     defaults: {
+      ...baseStyle,
       searchLabel: "Find your position", searchPlaceholder: "Type your name…",
       missText: "Name not on the roster.", allLabel: "The lanes", oneLabel: "Your lane",
       showSearch: true, showMap: true,

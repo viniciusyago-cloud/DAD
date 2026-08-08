@@ -19,6 +19,7 @@ import { loadImage, autoColor, pickColor, removeBackground, trimTransparent, can
 
 const TOOLS = [
   { k: "select",    l: "Selecionar",    d: "M4 3l14 7-6 2-2 6z" },
+  { k: "pan",       l: "Mover a imagem (mão)", d: "M8 13V5.5a1.5 1.5 0 0 1 3 0V12m0-1V4.5a1.5 1.5 0 0 1 3 0V12m0-1.5a1.5 1.5 0 0 1 3 0V12m0-.5a1.5 1.5 0 0 1 3 0V16a5 5 0 0 1-5 5h-2a6 6 0 0 1-6-6v-3a1.5 1.5 0 0 1 3 0" },
   { k: "pin",       l: "Pino",          d: "M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z M12 10h.01" },
   { k: "text",      l: "Texto",         d: "M5 6h14M12 6v13" },
   { k: "icon",      l: "Ícone da biblioteca", d: "M12 3l2.6 5.6 6 .8-4.4 4.2 1.1 6L12 16.7 6.7 19.6l1.1-6L3.4 9.4l6-.8z" },
@@ -62,7 +63,10 @@ export default function ImageEditor({ value, onSave, onClose }) {
   const [bg, setBg] = useState(null);
   const [textEdit, setTextEdit] = useState(null);
 
+  const [zoom, setZoom] = useState(1);
+
   const stage = useRef(null);
+  const wrap = useRef(null);
   const drag = useRef(null);
   const fileRef = useRef(null);
   const past = useRef([]);
@@ -147,6 +151,11 @@ export default function ImageEditor({ value, onSave, onClose }) {
     if (!src) return;
     const [x, y] = pt(e);
 
+    if (tool === "pan" || e.button === 1) {
+      const w = wrap.current;
+      drag.current = { mode: "pan", sx: e.clientX, sy: e.clientY, sl: w.scrollLeft, st: w.scrollTop };
+      return;
+    }
     if (tool === "bg") { bgPrepare([x, y]); return; }
     if (tool === "crop") { setCropDraft({ x, y, x2: x, y2: y }); return; }
 
@@ -188,6 +197,11 @@ export default function ImageEditor({ value, onSave, onClose }) {
   const onMove = (e) => {
     if (cropDraft) { const [x, y] = pt(e); setCropDraft((d) => ({ ...d, x2: x, y2: y })); return; }
     const d = drag.current;
+    if (d?.mode === "pan") {
+      wrap.current.scrollLeft = d.sl - (e.clientX - d.sx);
+      wrap.current.scrollTop  = d.st - (e.clientY - d.sy);
+      return;
+    }
     if (d) {
       const [x, y] = pt(e);
       const f = d.from;
@@ -308,7 +322,8 @@ export default function ImageEditor({ value, onSave, onClose }) {
 
   const save = () => onSave(layers.length || crop ? { src, crop, layers } : src);
 
-  const hint = tool === "bg" ? "Clique numa área do fundo para escolher a cor"
+  const hint = tool === "pan" ? "Arraste para percorrer a imagem · Ctrl+roda também dá zoom"
+    : tool === "bg" ? "Clique numa área do fundo para escolher a cor"
     : tool === "crop" ? "Arraste a área que quer manter, depois “Aplicar corte”"
     : tool === "route" ? "Clique para adicionar pontos, depois “Concluir rota”"
     : tool === "select" ? "Clique para selecionar · arraste para mover · setas ajustam · Delete apaga"
@@ -362,6 +377,13 @@ export default function ImageEditor({ value, onSave, onClose }) {
             <div className="ie-acts">
               <button className="ie-mini" onClick={undo} title="Desfazer (Ctrl+Z)">↺</button>
               <button className="ie-mini" onClick={redo} title="Refazer (Ctrl+Shift+Z)">↻</button>
+              <span className="ie-zoom">
+                <button className="ie-mini" onClick={() => setZoom((z) => Math.max(1, +(z - 0.25).toFixed(2)))}
+                        disabled={zoom <= 1} title="Menos zoom">−</button>
+                <button className="ie-zval" onClick={() => setZoom(1)} title="Voltar a 100%">{Math.round(zoom * 100)}%</button>
+                <button className="ie-mini" onClick={() => setZoom((z) => Math.min(6, +(z + 0.25).toFixed(2)))}
+                        disabled={zoom >= 6} title="Mais zoom">+</button>
+              </span>
               <span className="ie-hint">{hint}</span>
               {draft?.type === "route" && (
                 <button className="ie-btn ie-btn-gold" onClick={finishRoute}>Concluir rota ({draft.pts.length})</button>
@@ -372,10 +394,17 @@ export default function ImageEditor({ value, onSave, onClose }) {
               )}
             </div>
 
-            <div className="ie-stagewrap">
+            <div className="ie-stagewrap" ref={wrap}
+                 onWheel={(e) => {
+                   if (!(e.ctrlKey || e.metaKey)) return;      /* plain wheel keeps scrolling */
+                   e.preventDefault();
+                   setZoom((z) => Math.min(6, Math.max(1, +(z - Math.sign(e.deltaY) * 0.25).toFixed(2))));
+                 }}>
               <div className="ie-stage" ref={stage} onPointerDown={onDown} onPointerMove={onMove}
                    onPointerUp={onUp} onPointerLeave={onUp}
-                   style={{ aspectRatio: `${W} / ${H}`, cursor: tool === "select" ? "default" : "crosshair" }}>
+                   style={{ aspectRatio: `${W} / ${H}`, width: `${zoom * 100}%`,
+                            maxWidth: zoom > 1 ? "none" : undefined,
+                            cursor: tool === "pan" ? "grab" : tool === "select" ? "default" : "crosshair" }}>
                 <img src={bgPreview || src} alt="" draggable="false"
                      style={{ position: "absolute", width: `${100 / c.w}%`, height: `${100 / c.h}%`,
                               left: `${(-c.x * 100) / c.w}%`, top: `${(-c.y * 100) / c.h}%`, objectFit: "cover" }} />

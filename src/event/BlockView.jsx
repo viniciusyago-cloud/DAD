@@ -168,10 +168,10 @@ export default function BlockView({ b, slot }) {
     </section>
   );
 
-  /* battleplan is a composite of several sections — it keeps its own markup */
-  if (b.type === "battleplan") return <BattlePlan b={b} />;
-
   switch (b.type) {
+    /* A composite of several cards, but it goes through wrap() like every
+       other block so its Estilo tab is real rather than decorative. */
+    case "battleplan": return wrap(<BattlePlan b={b} />);
     case "phases":    return wrap(<Phases b={b} />);
     case "buildings": return wrap(<Buildings b={b} />);
     case "rules":     return wrap(<Rules b={b} />);
