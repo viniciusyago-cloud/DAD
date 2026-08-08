@@ -160,6 +160,22 @@ export default function EventEditor() {
     const j = f.i + d; if (j < 0 || j >= f.arr.length) return;
     [f.arr[f.i], f.arr[j]] = [f.arr[j], f.arr[f.i]];
   });
+  /* Blocks were stuck in the area they were created in, so a block in Topo —
+     which repeats above the tab menu on every tab — could never be moved into
+     a single tab, or the other way round. */
+  const moveToArea = (id, target) => {
+    if (target === area) return;
+    mutate((list, c) => {
+      const f = findIn(list, id); if (!f) return;
+      const dest = target === "header" ? c.header : c.tabs.find((t) => t.id === target)?.blocks;
+      if (!dest) return;
+      const [b] = f.arr.splice(f.i, 1);
+      /* Land next to the tab menu, which is the boundary the block just
+         crossed: bottom of Topo (just above it) or top of a tab (just below). */
+      if (target === "header") dest.push(b); else dest.unshift(b);
+    });
+    setArea(target); setSel(id);
+  };
   const dup = (id) => mutate((list) => {
     const f = findIn(list, id); if (!f) return;
     const clone = structuredClone(f.block);
@@ -311,6 +327,24 @@ export default function EventEditor() {
               {schema?.container && (
                 <div className="f-hint" style={{ marginTop: 4 }}>
                   Adicione blocos <b>dentro</b> desta seção usando os <b>+</b> que aparecem na área pontilhada.
+                </div>
+              )}
+
+              {/* Only for top-level blocks — a block nested in a group moves
+                  with its group, not on its own. */}
+              {blocks.some((b) => b.id === current.id) && (
+                <div className="f" style={{ marginTop: 14 }}>
+                  <label className="f-lbl">Onde este bloco vive</label>
+                  <select value={area} onChange={(e) => moveToArea(current.id, e.target.value)}>
+                    <option value="header">Topo — aparece em todas as abas</option>
+                    {doc.tabs.map((t) => (
+                      <option key={t.id} value={t.id}>Só na aba “{t.label}”</option>
+                    ))}
+                  </select>
+                  <div className="f-hint">
+                    O <b>Topo</b> fica acima do menu de abas. Mover para uma aba faz o bloco
+                    descer para baixo do menu e aparecer só ali.
+                  </div>
                 </div>
               )}
             </div>
