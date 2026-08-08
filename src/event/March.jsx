@@ -75,7 +75,7 @@ export default function March({ b }) {
           </div>
         );
       })}
-      {(b.items || []).length === 0 && <div className="ph">Nenhuma marcha ainda</div>}
+      {(b.items || []).length === 0 && <div className="ph">No marches yet</div>}
     </div>
   );
 }

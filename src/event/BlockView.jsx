@@ -4,6 +4,7 @@ import Countdown from "./Countdown.jsx";
 import March from "./March.jsx";
 import Pic, { imgSrc, hasAnno } from "./imgedit/Pic.jsx";
 import { Lineup, MembersBlock, Confirmed } from "./MemberBlocks.jsx";
+import { BLOCKS } from "./blocks.js";
 
 /* ============================================================
    BLOCK RENDERER — draws any block from the registry.
@@ -107,8 +108,17 @@ export function lineStyle(b, p, fallback = {}) {
   };
 }
 
+/* The legacy battle blocks keep their section heading in `label`, so Title
+   falls back to it — but when a block declares `label` as one of its own
+   editable fields it is content (the button's caption), not a heading. */
+const LABEL_IS_CONTENT = new Set(
+  Object.entries(BLOCKS)
+    .filter(([, s]) => (s.fields || []).some((f) => f.key === "label"))
+    .map(([t]) => t),
+);
+
 function Title({ b }) {
-  const text = b._title || b.label || "";
+  const text = b._title || (LABEL_IS_CONTENT.has(b.type) ? "" : b.label) || "";
   if (!text && !imgSrc(b._titleIcon)) return null;
   const st = {
     color: b._titleColor || undefined,
@@ -428,7 +438,7 @@ export default function BlockView({ b, slot }) {
     case "button":
       return wrap(
         <a className={`ebtn ebtn-${b.variant || "gold"}`} href={b.url || "#"}
-           target={b.url ? "_blank" : undefined} rel="noreferrer">{b.label || "Botão"}</a>,
+           target={b.url ? "_blank" : undefined} rel="noreferrer">{b.label || "Button"}</a>,
       );
 
     case "group":

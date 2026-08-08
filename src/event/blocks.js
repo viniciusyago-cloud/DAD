@@ -138,8 +138,8 @@ export const BLOCKS = {
       { key: "hVAlign", type: "select", label: "Vertical", options: [
         { v: "bottom", l: "Embaixo" }, { v: "center", l: "Meio" }, { v: "top", l: "Em cima" } ] },
     ],
-    defaults: { ...baseStyle, _align: "center", image: "", eyebrow: "Tri-Alliance", title: "Nome do evento",
-      subtitle: "Uma linha curta de apoio", height: 280, overlay: 60,
+    defaults: { ...baseStyle, _align: "center", image: "", eyebrow: "Tri-Alliance", title: "Event name",
+      subtitle: "One short supporting line", height: 280, overlay: 60,
       hTitleMetal: true, hTitleAlign: "left", hEyebrowAlign: "left", hSubAlign: "left", hVAlign: "bottom" },
     fields: [
       { key: "image", type: "image", label: "Imagem de fundo" },
@@ -152,7 +152,7 @@ export const BLOCKS = {
   },
   heading: {
     label: "Título", group: "Estrutura", icon: "type",
-    defaults: { ...baseStyle, text: "Novo título", level: "h2", metal: true },
+    defaults: { ...baseStyle, text: "New heading", level: "h2", metal: true },
     fields: [
       { key: "text", type: "text", label: "Texto" },
       { key: "level", type: "select", label: "Tamanho", options: [
@@ -162,7 +162,7 @@ export const BLOCKS = {
   },
   text: {
     label: "Texto", group: "Estrutura", icon: "text",
-    defaults: { ...baseStyle, body: "Escreva aqui. Use **negrito**, *itálico*, [link](https://…) e listas com -.", size: "md" },
+    defaults: { ...baseStyle, body: "Write here. Use **bold**, *italic*, [link](https://…) and lists with -.", size: "md" },
     fields: [
       { key: "body", type: "richtext", label: "Conteúdo" },
       { key: "size", type: "select", label: "Tamanho", options: [
@@ -268,9 +268,9 @@ export const BLOCKS = {
   kpis: {
     label: "KPIs / Números", group: "Evento", icon: "chart",
     defaults: { ...baseStyle, cols: 3, items: [
-      { icon: "", label: "Alianças", value: "3", color: "#ecc25a" },
-      { icon: "", label: "Jogadores", value: "168", color: "#52c48c" },
-      { icon: "", label: "Fases", value: "12", color: "#f2824a" },
+      { icon: "", label: "Alliances", value: "3", color: "#ecc25a" },
+      { icon: "", label: "Players", value: "168", color: "#52c48c" },
+      { icon: "", label: "Phases", value: "12", color: "#f2824a" },
     ] },
     fields: [
       { key: "cols", type: "select", label: "Colunas", options: [
@@ -286,7 +286,7 @@ export const BLOCKS = {
   cards: {
     label: "Cards", group: "Evento", icon: "cards",
     defaults: { ...baseStyle, cols: 2, items: [
-      { image: "", title: "Título do card", text: "Descrição curta.", badge: "", color: "#ecc25a", link: "" },
+      { image: "", title: "Card title", text: "Short description.", badge: "", color: "#ecc25a", link: "" },
     ] },
     fields: [
       { key: "cols", type: "select", label: "Colunas", options: [
@@ -315,8 +315,8 @@ export const BLOCKS = {
     label: "Equipes / Alianças", group: "Evento", icon: "shield",
     defaults: { ...baseStyle, items: [
       { name: "BigDaddys", tag: "DAD", logo: "", color: "#ecc25a", score: "0", note: "" },
-      { name: "Aliança 2", tag: "", logo: "", color: "#4a8fe0", score: "0", note: "" },
-      { name: "Aliança 3", tag: "", logo: "", color: "#e05a6a", score: "0", note: "" },
+      { name: "Alliance 2", tag: "", logo: "", color: "#4a8fe0", score: "0", note: "" },
+      { name: "Alliance 3", tag: "", logo: "", color: "#e05a6a", score: "0", note: "" },
     ] },
     fields: [
       { key: "items", type: "list", label: "Equipes", addLabel: "Adicionar equipe",
@@ -334,7 +334,7 @@ export const BLOCKS = {
   roster: {
     label: "Lista de pessoas (livre)", group: "Evento", icon: "users",
     defaults: { ...baseStyle, cols: 2, avatarSize: 38, items: [
-      { avatar: "", name: "Nome do jogador", role: "Função", note: "" },
+      { avatar: "", name: "Player name", role: "Role", note: "" },
     ] },
     fields: [
       { key: "cols", type: "select", label: "Colunas", options: [
@@ -352,7 +352,7 @@ export const BLOCKS = {
   timeline: {
     label: "Cronograma", group: "Evento", icon: "clock",
     defaults: { ...baseStyle, items: [
-      { time: "11:00", title: "Abertura", text: "Descrição da fase.", state: "next" },
+      { time: "11:00", title: "Opening", text: "Phase description.", state: "next" },
     ] },
     fields: [
       { key: "items", type: "list", label: "Fases", addLabel: "Adicionar fase",
@@ -401,8 +401,8 @@ export const BLOCKS = {
   },
   table: {
     label: "Tabela / Placar", group: "Evento", icon: "table",
-    defaults: { ...baseStyle, headers: "Aliança, Pontos, Posição",
-      rows: [{ cells: "BigDaddys, 0, 1º" }, { cells: "Aliança 2, 0, 2º" }] },
+    defaults: { ...baseStyle, headers: "Alliance, Points, Rank",
+      rows: [{ cells: "BigDaddys, 0, 1st" }, { cells: "Alliance 2, 0, 2nd" }] },
     fields: [
       { key: "headers", type: "text", label: "Cabeçalhos (separe por vírgula)" },
       { key: "rows", type: "list", label: "Linhas", addLabel: "Adicionar linha",
@@ -413,7 +413,7 @@ export const BLOCKS = {
   },
   callout: {
     label: "Aviso / Destaque", group: "Evento", icon: "alert",
-    defaults: { ...baseStyle, variant: "info", title: "Atenção", text: "Mensagem importante." },
+    defaults: { ...baseStyle, variant: "info", title: "Heads up", text: "Something important." },
     fields: [
       { key: "variant", type: "select", label: "Tipo", options: [
         { v: "info", l: "Informação" }, { v: "tip", l: "Dica" },
@@ -424,7 +424,7 @@ export const BLOCKS = {
   },
   button: {
     label: "Botão", group: "Evento", icon: "link",
-    defaults: { ...baseStyle, _align: "center", label: "Abrir", url: "", variant: "gold" },
+    defaults: { ...baseStyle, _align: "center", label: "Open", url: "", variant: "gold" },
     fields: [
       { key: "label", type: "text", label: "Texto" },
       { key: "url", type: "text", label: "Link" },
@@ -436,7 +436,7 @@ export const BLOCKS = {
   /* ---------------- Containers ---------------- */
   group: {
     label: "Grupo / Seção (aninha blocos)", group: "Estrutura", container: true,
-    defaults: { ...baseStyle, _bg: "panel", _title: "Nova seção", cols: 1, children: [] },
+    defaults: { ...baseStyle, _bg: "panel", _title: "New section", cols: 1, children: [] },
     fields: [
       { key: "cols", type: "select", label: "Colunas internas", options: [
         { v: 1, l: "1" }, { v: 2, l: "2" }, { v: 3, l: "3" } ] },
@@ -445,8 +445,8 @@ export const BLOCKS = {
 
   march: {
     label: "Marcha / Esquadrão", group: "Batalha",
-    defaults: { ...baseStyle, _bg: "panel", _title: "Marchas", cols: 1, mode: "pct", heroSize: 62,
-      items: [{ title: "Marcha 1", note: "", infHero: "", cavHero: "", archHero: "",
+    defaults: { ...baseStyle, _bg: "panel", _title: "Marches", cols: 1, mode: "pct", heroSize: 62,
+      items: [{ title: "March 1", note: "", infHero: "", cavHero: "", archHero: "",
         infName: "", cavName: "", archName: "",
         infPct: 34, cavPct: 33, archPct: 33, infQty: "", cavQty: "", archQty: "", why: "" }] },
     styleFields: [
@@ -483,7 +483,7 @@ export const BLOCKS = {
   /* ---------------- Members ---------------- */
   lineup: {
     label: "Escalação (vagas + confirmação)", group: "Membros",
-    defaults: { ...baseStyle, _bg: "panel", _title: "Entrar", slots: 30, cols: 1, avatarSize: 46,
+    defaults: { ...baseStyle, _bg: "panel", _title: "Line-up", slots: 30, cols: 1, avatarSize: 46,
       show: { avatar: true, name: true, tier: true, power: true, troops: true },
       askConfirm: true, picks: [] },
     fields: [
@@ -498,7 +498,7 @@ export const BLOCKS = {
   },
   memberlist: {
     label: "Membros (seção livre)", group: "Membros",
-    defaults: { ...baseStyle, _bg: "panel", _title: "Membros", cols: 2, avatarSize: 46,
+    defaults: { ...baseStyle, _bg: "panel", _title: "Members", cols: 2, avatarSize: 46,
       show: { avatar: true, name: true, tier: true, power: true, troops: true }, picks: [] },
     fields: [
       { key: "cols", type: "select", label: "Colunas", options: [
@@ -510,7 +510,7 @@ export const BLOCKS = {
   },
   confirmed: {
     label: "Confirmados (resumo)", group: "Membros",
-    defaults: { ...baseStyle, _bg: "panel", _title: "Confirmações",
+    defaults: { ...baseStyle, _bg: "panel", _title: "Confirmations",
       only: [], showNames: true, showTotal: true },
     fields: [
       { key: "only", type: "lineups", label: "Quais escalações somar" },
@@ -587,7 +587,7 @@ export const BLOCKS = {
   },
   howwewin: {
     label: "Como vencemos", group: "Batalha",
-    defaults: { label: "How we win", items: [{ title: "Título", text: "Explicação." }] },
+    defaults: { label: "How we win", items: [{ title: "Title", text: "Why it matters." }] },
     fields: [
       { key: "items", type: "list", label: "Passos", addLabel: "Adicionar passo", titleKey: "title", item: [
         { key: "title", type: "text", label: "Título" },
@@ -640,7 +640,7 @@ export const BLOCKS = {
   phases: {
     label: "Fases da batalha", group: "Batalha",
     defaults: { label: "The phases", marks: "0, 20, 40, 60",
-      items: [{ name: "Fase", span: "0–20 min", color: "#ecc25a", weight: 20, points: "Ponto 1\nPonto 2" }] },
+      items: [{ name: "Phase", span: "0–20 min", color: "#ecc25a", weight: 20, points: "Point 1\nPoint 2" }] },
     fields: [
       { key: "marks", type: "text", label: "Marcas de tempo (separe por vírgula)" },
       { key: "items", type: "list", label: "Fases", addLabel: "Adicionar fase", titleKey: "name", item: [
@@ -654,7 +654,7 @@ export const BLOCKS = {
   },
   buildings: {
     label: "Prédios", group: "Batalha",
-    defaults: { label: "The buildings", items: [{ img: "", name: "Prédio", codes: "", pts: "", note: "", hot: false }] },
+    defaults: { label: "The buildings", items: [{ img: "", name: "Building", codes: "", pts: "", note: "", hot: false }] },
     fields: [
       { key: "items", type: "list", label: "Prédios", addLabel: "Adicionar prédio", titleKey: "name", item: [
         { key: "img", type: "image", label: "Imagem" },
@@ -670,7 +670,7 @@ export const BLOCKS = {
   },
   rules: {
     label: "Regras", group: "Batalha",
-    defaults: { label: "Key rules", items: [{ icon: "star", image: "", title: "Regra", text: "Descrição." }] },
+    defaults: { label: "Key rules", items: [{ icon: "star", image: "", title: "Rule", text: "Description." }] },
     fields: [
       { key: "items", type: "list", label: "Regras", addLabel: "Adicionar regra", titleKey: "title", item: [
         { key: "icon", type: "select", label: "Ícone", options: [
@@ -687,7 +687,7 @@ export const BLOCKS = {
   },
   marches: {
     label: "Marchas / Esquadrões", group: "Batalha",
-    defaults: { label: "Your marches", items: [{ title: "March 1", text: "Seus melhores heróis" }],
+    defaults: { label: "Your marches", items: [{ title: "March 1", text: "Your best heroes" }],
       notes: [] },
     fields: [
       { key: "items", type: "list", label: "Marchas", addLabel: "Adicionar marcha", titleKey: "title", item: [

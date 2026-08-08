@@ -27,7 +27,7 @@ function PersonCard({ p, show, confirmed, onConfirm, canConfirm, avatarSize }) {
   if (!p) {
     return (
       <div className="pc pc-empty">
-        <span className="pc-vago">Vago</span>
+        <span className="pc-vago">Open</span>
       </div>
     );
   }
@@ -95,9 +95,9 @@ export function Lineup({ b }) {
     <>
       <div className="lu-head">
         <span className="lu-count">
-          <b>{filled}</b>{slots ? ` / ${slots}` : ""} escalados
+          <b>{filled}</b>{slots ? ` / ${slots}` : ""} picked
         </span>
-        {b.askConfirm && <span className="lu-conf"><b>{confirmedCount}</b> confirmados</span>}
+        {b.askConfirm && <span className="lu-conf"><b>{confirmedCount}</b> confirmed</span>}
       </div>
 
       <div className={(b.cols || 1) > 1 ? "grid" : "stack"} style={{ "--c": b.cols || 1 }}>
@@ -122,7 +122,7 @@ export function MembersBlock({ b }) {
   return (
     <div className={(b.cols || 2) > 1 ? "grid" : "stack"} style={{ "--c": b.cols || 2 }}>
       {people.map((p, i) => <PersonCard key={i} p={p} show={b.show} avatarSize={b.avatarSize} />)}
-      {people.length === 0 && <div className="ph">Nenhum membro selecionado</div>}
+      {people.length === 0 && <div className="ph">No members selected</div>}
     </div>
   );
 }
@@ -146,7 +146,7 @@ export function Confirmed({ b }) {
   });
 
   if (!groups.length) {
-    return <div className="ph">Adicione blocos de escalação nesta página para somá-los aqui.</div>;
+    return <div className="ph">Add lineup blocks to this page to total them here.</div>;
   }
 
   return (
@@ -157,20 +157,20 @@ export function Confirmed({ b }) {
           <div className="cf-g" key={g.id}>
             <div className="cf-h">
               <span className="cf-t">{g.label}</span>
-              <span className="cf-n"><b>{g.done.length}</b>/{g.picked}{g.slots ? ` · ${g.slots} vagas` : ""}</span>
+              <span className="cf-n"><b>{g.done.length}</b>/{g.picked}{g.slots ? ` · ${g.slots} slots` : ""}</span>
             </div>
             <div className="cf-bar"><i style={{ width: `${pct}%` }} /></div>
             {b.showNames !== false && (
               <div className="cf-lists">
                 {g.done.length > 0 && (
                   <div className="cf-list ok">
-                    <span className="cf-lbl">Confirmados</span>
+                    <span className="cf-lbl">Confirmed</span>
                     {g.done.map((p) => <span className="cf-chip" key={p.key}>{p.name}</span>)}
                   </div>
                 )}
                 {g.pending.length > 0 && (
                   <div className="cf-list">
-                    <span className="cf-lbl">Aguardando</span>
+                    <span className="cf-lbl">Waiting</span>
                     {g.pending.map((p) => <span className="cf-chip" key={p.key}>{p.name}</span>)}
                   </div>
                 )}
@@ -183,7 +183,7 @@ export function Confirmed({ b }) {
         <div className="cf-total">
           <span>Total</span>
           <b>{groups.reduce((s, g) => s + g.done.length, 0)}</b>
-          <span>de {groups.reduce((s, g) => s + g.picked, 0)} escalados</span>
+          <span>of {groups.reduce((s, g) => s + g.picked, 0)} picked</span>
         </div>
       )}
     </div>
