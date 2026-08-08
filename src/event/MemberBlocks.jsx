@@ -35,44 +35,53 @@ function PersonCard({ p, show, confirmed, onConfirm, canConfirm, avatarSize }) {
   const troops = totalTroops(p);
   const anyTroop = s.inf || s.cav || s.arch;
 
+  /* Identity row on top, action as a footer spanning the whole card. The
+     footer stays put once confirmed — only its colour and wording change —
+     so the card keeps its height, the grid never jumps mid-list, and undoing
+     a wrong tap is still one tap away. */
   return (
     <div className={`pc${confirmed ? " ok" : ""}`}>
-      {s.avatar && (
-        <div className="pc-av" style={avatarSize ? { width: avatarSize, height: avatarSize } : undefined}>
-          {imgSrc(p.avatar) || p.avatar
-            ? <Pic v={avatarSrc(p.avatar)} fit="fill" alt="" />
-            : <span>{(p.name || "?").slice(0, 1)}</span>}
-        </div>
-      )}
-      <div className="pc-body">
-        <div className="pc-top">
-          {s.name && <span className="pc-name">{p.name}</span>}
-          {s.tier && p.tier && <TierIcon tier={p.tier} size={22} />}
-          {p.guest && <span className="pc-guest">guest</span>}
-          {confirmed && <span className="pc-badge">✓</span>}
-        </div>
-
-        {anyTroop && (
-          <div className="pc-troops">
-            {s.inf  && <span className="inf"><img src="/troops/infantry.png" alt="" />{fmt(p.inf)}</span>}
-            {s.cav  && <span className="cav"><img src="/troops/cavalry.png" alt="" />{fmt(p.cav)}</span>}
-            {s.arch && <span className="arch"><img src="/troops/archer.png" alt="" />{fmt(p.arch)}</span>}
+      <div className="pc-row">
+        {s.avatar && (
+          <div className="pc-av" style={avatarSize ? { width: avatarSize, height: avatarSize } : undefined}>
+            {imgSrc(p.avatar) || p.avatar
+              ? <Pic v={avatarSrc(p.avatar)} fit="fill" alt="" />
+              : <span>{(p.name || "?").slice(0, 1)}</span>}
           </div>
         )}
-
-        {(s.power || s.troops) && (
-          <div className="pc-stats">
-            {s.power  && <span><i>Power</i>{p.power > 0 ? `${p.power}M` : "—"}</span>}
-            {s.troops && <span><i>Troops</i>{fmt(troops)}</span>}
+        <div className="pc-body">
+          <div className="pc-top">
+            {s.name && <span className="pc-name">{p.name}</span>}
+            {s.tier && p.tier && <TierIcon tier={p.tier} size={22} />}
+            {p.guest && <span className="pc-guest">guest</span>}
           </div>
-        )}
 
-        {canConfirm && (
-          <button className={`pc-conf${confirmed ? " on" : ""}`} onClick={onConfirm}>
-            {confirmed ? "Confirmed — tap to undo" : "Confirm my spot"}
-          </button>
-        )}
+          {anyTroop && (
+            <div className="pc-troops">
+              {s.inf  && <span className="inf"><img src="/troops/infantry.png" alt="" />{fmt(p.inf)}</span>}
+              {s.cav  && <span className="cav"><img src="/troops/cavalry.png" alt="" />{fmt(p.cav)}</span>}
+              {s.arch && <span className="arch"><img src="/troops/archer.png" alt="" />{fmt(p.arch)}</span>}
+            </div>
+          )}
+
+          {(s.power || s.troops) && (
+            <div className="pc-stats">
+              {s.power  && <span><i>Power</i>{p.power > 0 ? `${p.power}M` : "—"}</span>}
+              {s.troops && <span><i>Troops</i>{fmt(troops)}</span>}
+            </div>
+          )}
+        </div>
+        {/* Only when there is no footer to carry the tick — a badge beside the
+            name steals width from it, so a confirmed player's name would
+            truncate while an unconfirmed one's does not. */}
+        {confirmed && !canConfirm && <span className="pc-badge" aria-hidden="true">✓</span>}
       </div>
+
+      {canConfirm && (
+        <button className={`pc-conf${confirmed ? " on" : ""}`} onClick={onConfirm} aria-pressed={confirmed}>
+          {confirmed ? "✓ Confirmed" : "Confirm spot"}
+        </button>
+      )}
     </div>
   );
 }

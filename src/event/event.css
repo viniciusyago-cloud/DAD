@@ -573,9 +573,11 @@ body .site-foot { position: fixed; }
 .lu-conf b { color: var(--inf); }
 
 /* person card */
-.pc { display: flex; gap: 11px; padding: 10px 11px; border-radius: 11px; text-align: left;
+.pc { display: flex; flex-direction: column; padding: 10px 11px; border-radius: 11px; text-align: left;
   background: var(--well); box-shadow: inset 0 1px 2px #0006, 0 0 0 1px var(--edge); }
-.pc.ok { box-shadow: inset 0 1px 2px #0006, 0 0 0 1px #1e5a40; }
+.pc-row { display: flex; align-items: center; gap: 11px; }
+.pc.ok { box-shadow: inset 0 1px 2px #0006, 0 0 0 1px var(--inf); }
+.pc.ok .pc-av { box-shadow: 0 0 0 1px var(--inf); }
 .pc-empty { align-items: center; justify-content: center; min-height: 56px; box-shadow: none;
   background: transparent; border: 1px dashed color-mix(in srgb, var(--ink-mute) 45%, transparent); }
 .pc-vago { font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-mute); }
@@ -589,22 +591,32 @@ body .site-foot { position: fixed; }
   overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .pc-guest { flex-shrink: 0; font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
   color: var(--steel); padding: 2px 6px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--edge-hi); }
-.pc-badge { flex-shrink: 0; margin-left: auto; color: var(--inf); font-weight: 800; }
-.pc-troops { display: flex; gap: 12px; margin-top: 6px; }
+.pc-badge { flex-shrink: 0; margin-left: auto; align-self: center; font-size: 16px; color: var(--inf); font-weight: 800; }
+.pc-troops { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; }
 .pc-troops span { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700;
   font-variant-numeric: tabular-nums; }
 .pc-troops img { width: 14px; height: 14px; opacity: .85; }
 .pc-troops .inf { color: #5a9c7d; } .pc-troops .cav { color: #c2a153; } .pc-troops .arch { color: #c9714a; }
-.pc-stats { display: flex; gap: 14px; margin-top: 6px; }
+/* Two stats side by side overflow a narrow two-column card — let them wrap
+   instead of running off the edge. */
+.pc-stats { display: flex; flex-wrap: wrap; gap: 3px 14px; margin-top: 6px; }
 .pc-stats span { display: inline-flex; align-items: baseline; gap: 5px; font-family: var(--font-display);
   font-size: 12.5px; font-weight: 700; color: var(--gold-lt); font-variant-numeric: tabular-nums; }
 .pc-stats i { font-style: normal; font-family: var(--font-sans); font-size: 8px; font-weight: 700;
   color: var(--ink-mute); letter-spacing: .12em; text-transform: uppercase; }
-.pc-conf { width: 100%; margin-top: 9px; padding: 8px; border: none; border-radius: 8px; cursor: pointer;
-  font-family: inherit; font-size: 12px; font-weight: 700; color: var(--gold-lt);
-  background: transparent; box-shadow: inset 0 0 0 1px var(--gold-dk); }
-.pc-conf:hover { background: #ffffff08; }
-.pc-conf.on { color: #0f2018; background: var(--inf); box-shadow: none; }
+/* Footer spanning the card, not a button floating in the text column: the
+   negative margins pull it out to both edges so it lines up with the card
+   itself. Orange rather than gold — a gold button next to gold names, gold
+   frames and gold tier badges has nothing left to stand out against. */
+.pc-conf { margin: 10px -11px -10px; padding: 9px 11px; border: none; border-radius: 0 0 11px 11px;
+  cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 700; text-align: center;
+  color: var(--arch); background: transparent; border-top: 1px solid var(--edge); }
+.pc-conf:hover { background: color-mix(in srgb, var(--arch) 12%, transparent); }
+.pc-conf:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--arch); }
+.pc-conf.on { color: var(--inf); border-top-color: color-mix(in srgb, var(--inf) 32%, transparent);
+  background: color-mix(in srgb, var(--inf) 9%, transparent); }
+.pc-conf.on:hover { background: color-mix(in srgb, var(--inf) 16%, transparent); }
+.pc-conf.on:focus-visible { box-shadow: inset 0 0 0 2px var(--inf); }
 
 /* confirmation summary */
 .cf { display: flex; flex-direction: column; gap: 14px; }
