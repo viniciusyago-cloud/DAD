@@ -68,6 +68,7 @@ export default function ImageEditor({ value, onSave, onClose }) {
   const stage = useRef(null);
   const wrap = useRef(null);
   const drag = useRef(null);
+  const cropping = useRef(false);
   const fileRef = useRef(null);
   const past = useRef([]);
   const future = useRef([]);
@@ -160,7 +161,14 @@ export default function ImageEditor({ value, onSave, onClose }) {
       return;
     }
     if (tool === "bg") { bgPrepare([x, y]); return; }
-    if (tool === "crop") { setCropDraft({ x, y, x2: x, y2: y }); return; }
+    if (tool === "crop") {
+      /* Starting a fresh rectangle only when there isn't one waiting to be
+         applied — otherwise a click meant to confirm wipes the selection. */
+      if (cropDraft) return;
+      cropping.current = true;
+      setCropDraft({ x, y, x2: x, y2: y });
+      return;
+    }
 
     if (tool === "select") {
       const h = e.target?.dataset?.handle;
@@ -198,7 +206,9 @@ export default function ImageEditor({ value, onSave, onClose }) {
   };
 
   const onMove = (e) => {
-    if (cropDraft) { const [x, y] = pt(e); setCropDraft((d) => ({ ...d, x2: x, y2: y })); return; }
+    /* Only while the button is actually down — the rectangle used to keep
+       chasing the pointer after release, so it could never be finished. */
+    if (cropping.current) { const [x, y] = pt(e); setCropDraft((d) => ({ ...d, x2: x, y2: y })); return; }
     const d = drag.current;
     if (d?.mode === "pan") {
       wrap.current.scrollLeft = d.sl - (e.clientX - d.sx);
@@ -228,6 +238,13 @@ export default function ImageEditor({ value, onSave, onClose }) {
 
   const onUp = () => {
     drag.current = null;
+    if (cropping.current) {
+      cropping.current = false;
+      /* A stray click leaves a rectangle too small to mean anything; drop it
+         so the tool is ready for a real drag instead of looking stuck. */
+      setCropDraft((d) => (d && (Math.abs(d.x2 - d.x) < 0.02 || Math.abs(d.y2 - d.y) < 0.02) ? null : d));
+      return;
+    }
     if (draft && draft.type !== "route") {
       const big = Math.abs(draft.x2 - draft.x) > 0.012 || Math.abs(draft.y2 - draft.y) > 0.012;
       if (big) add(draft);
@@ -327,7 +344,8 @@ export default function ImageEditor({ value, onSave, onClose }) {
 
   const hint = tool === "pan" ? "Arraste para percorrer a imagem · Ctrl+roda também dá zoom"
     : tool === "bg" ? "Clique numa área do fundo para escolher a cor"
-    : tool === "crop" ? "Arraste a área que quer manter, depois “Aplicar corte”"
+    : tool === "crop" ? (cropDraft ? "Área marcada — “Aplicar corte” confirma, “Refazer seleção” recomeça"
+                                   : "Arraste a área que quer manter, depois “Aplicar corte”")
     : tool === "route" ? "Clique para adicionar pontos, depois “Concluir rota”"
     : tool === "select" ? "Clique para selecionar · arraste para mover · setas ajustam · Delete apaga"
     : "Clique ou arraste sobre a imagem";
@@ -391,6 +409,7 @@ export default function ImageEditor({ value, onSave, onClose }) {
               {draft?.type === "route" && (
                 <button className="ie-btn ie-btn-gold" onClick={finishRoute}>Concluir rota ({draft.pts.length})</button>
               )}
+              {cropDraft && <button className="ie-btn" onClick={() => setCropDraft(null)}>Refazer seleção</button>}
               {cropDraft && <button className="ie-btn ie-btn-gold" onClick={applyCrop}>Aplicar corte</button>}
               {crop && !cropDraft && (
                 <button className="ie-btn" onClick={() => { snap(); setCrop(null); }}>Remover corte</button>
