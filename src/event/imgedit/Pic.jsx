@@ -24,9 +24,12 @@ const natCache = new Map();
 export function useNatural(src, enabled = true) {
   const [nat, setNat] = React.useState(() => (src ? natCache.get(src) || null : null));
   React.useEffect(() => {
-    if (!src || !enabled) return;
+    if (!src || !enabled) { setNat(null); return; }
     const hit = natCache.get(src);
     if (hit) { setNat(hit); return; }
+    /* A new src must stop reporting the previous image's size, or callers
+       lay the new image out in the old one's box and crop it. */
+    setNat(null);
     let alive = true;
     const im = new Image();
     im.onload = () => {

@@ -72,7 +72,10 @@ export default function ImageEditor({ value, onSave, onClose }) {
   const past = useRef([]);
   const future = useRef([]);
 
-  const nat = useNatural(src) || { w: 1600, h: 900 };
+  /* Until the real size is known any stage aspect is a guess, and a guess
+     plus object-fit crops the user's image. Wait instead of guessing. */
+  const natReady = useNatural(src);
+  const nat = natReady || { w: 1600, h: 900 };
   const c = crop || { x: 0, y: 0, w: 1, h: 1 };
   const W = nat.w * c.w, H = nat.h * c.h;
   const S = Math.min(W, H);
@@ -394,6 +397,9 @@ export default function ImageEditor({ value, onSave, onClose }) {
               )}
             </div>
 
+            {!natReady ? (
+              <div className="ie-stagewrap"><div className="ie-loading">Carregando a imagem…</div></div>
+            ) : (
             <div className="ie-stagewrap" ref={wrap}
                  onWheel={(e) => {
                    if (!(e.ctrlKey || e.metaKey)) return;      /* plain wheel keeps scrolling */
@@ -405,9 +411,12 @@ export default function ImageEditor({ value, onSave, onClose }) {
                    style={{ aspectRatio: `${W} / ${H}`, width: `${zoom * 100}%`,
                             maxWidth: zoom > 1 ? "none" : undefined,
                             cursor: tool === "pan" ? "grab" : tool === "select" ? "default" : "crosshair" }}>
+                {/* `fill`, not `cover`: the box above is already the image
+                    scaled to the crop, so filling it is exact and can never
+                    shave off an edge. */}
                 <img src={bgPreview || src} alt="" draggable="false"
                      style={{ position: "absolute", width: `${100 / c.w}%`, height: `${100 / c.h}%`,
-                              left: `${(-c.x * 100) / c.w}%`, top: `${(-c.y * 100) / c.h}%`, objectFit: "cover" }} />
+                              left: `${(-c.x * 100) / c.w}%`, top: `${(-c.y * 100) / c.h}%`, objectFit: "fill" }} />
 
                 {layers.filter((l) => l.type === "blur").map((l) => (
                   <span key={l.id} className="ie-blur" style={{
@@ -443,6 +452,7 @@ export default function ImageEditor({ value, onSave, onClose }) {
                 </svg>
               </div>
             </div>
+            )}
 
             <aside className="ie-side">
               {bg && <BgPanel bg={bg} setBg={setBg} onApply={bgApply}
