@@ -59,6 +59,12 @@
 .ie-colors, .ie-swatches { display: flex; gap: 4px; flex-shrink: 0; flex-wrap: wrap; }
 .ie-col { width: 22px; height: 22px; border-radius: 6px; border: none; cursor: pointer; box-shadow: inset 0 0 0 1px #0006; }
 .ie-col.on { box-shadow: inset 0 0 0 1px #0006, 0 0 0 2px var(--ink); }
+/* Free colour. The native picker sits invisibly on top of the swatch so the
+   control looks like the presets beside it. */
+.ie-col-any { position: relative; display: block; overflow: hidden; cursor: pointer;
+  box-shadow: inset 0 0 0 1px #0006, inset 0 0 0 3px #ffffff40; }
+.ie-col-any input { position: absolute; inset: -6px; width: calc(100% + 12px); height: calc(100% + 12px);
+  padding: 0; border: none; background: none; opacity: 0; cursor: pointer; }
 /* Action bar — its own row, never inside the scrolling .ie-tools, so a
    confirm button can never end up parked outside the visible area. */
 .ie-acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient.js";
 import BlockView from "./BlockView.jsx";
@@ -59,17 +59,54 @@ export default function EventPage() {
       {doc.header.map((b) => <BlockView key={b.id} b={b} />)}
 
       {tabs.length > 1 && (
-        <nav className="ev-tabbar" role="tablist">
-          {tabs.map((t, i) => (
-            <button key={t.id} role="tab" aria-selected={i === active}
-                    className={`ev-tabchip${i === active ? " on" : ""}`}
-                    onClick={() => setActive(i)}>{t.label}</button>
-          ))}
-        </nav>
+        <TabBar tabs={tabs} active={active} onPick={setActive} />
       )}
 
       {cur?.blocks.map((b) => <BlockView key={b.id} b={b} />)}
     </div>
     </PageCtx.Provider>
+  );
+}
+
+/* ------------------------------------------------------------------
+   Tab strip. It scrolls sideways, and a strip that simply stops at the
+   edge reads as missing content rather than more content — so each side
+   fades only while there is something past it. The active tab also pulls
+   itself into view, since landing on a page whose tab starts off-screen
+   looks like the wrong tab is selected.
+   ------------------------------------------------------------------ */
+function TabBar({ tabs, active, onPick }) {
+  const strip = useRef(null);
+  const [edge, setEdge] = useState({ left: false, right: false });
+
+  const measure = () => {
+    const el = strip.current; if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    setEdge({ left: el.scrollLeft > 2, right: el.scrollLeft < max - 2 });
+  };
+
+  useEffect(() => {
+    measure();
+    const el = strip.current; if (!el) return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [tabs.length]);
+
+  useEffect(() => {
+    strip.current?.children[active]?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    measure();
+  }, [active]);
+
+  return (
+    <div className={`ev-tabwrap${edge.left ? " fade-l" : ""}${edge.right ? " fade-r" : ""}`}>
+      <nav className="ev-tabbar" role="tablist" ref={strip} onScroll={measure}>
+        {tabs.map((t, i) => (
+          <button key={t.id} role="tab" aria-selected={i === active}
+                  className={`ev-tabchip${i === active ? " on" : ""}`}
+                  onClick={() => onPick(i)}>{t.label}</button>
+        ))}
+      </nav>
+    </div>
   );
 }

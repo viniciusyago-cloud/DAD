@@ -43,6 +43,25 @@ const uid = () => `l${Date.now().toString(36)}${Math.random().toString(36).slice
    looks right on a banner is not a monster on a 64px icon. */
 const DEF = { pin: 0.055, text: 0.09, icon: 0.14, stroke: 0.02, hl: 0.07 };
 
+/** Palette shortcuts plus a free colour — the nine presets are a starting
+    point, not the limit of what you can draw with. */
+function Swatches({ value, onChange, few }) {
+  const list = few ? PALETTE.slice(0, 7) : PALETTE;
+  return (
+    <div className="ie-swatches">
+      {list.map((p) => (
+        <button key={p.v} type="button" title={p.name}
+                className={`ie-col${value === p.v ? " on" : ""}`}
+                style={{ background: p.v }} onClick={() => onChange(p.v)} />
+      ))}
+      <label className={`ie-col ie-col-any${list.some((p) => p.v === value) ? "" : " on"}`}
+             title="Cor personalizada" style={{ background: value || "#ecc25a" }}>
+        <input type="color" value={value || "#ecc25a"} onChange={(e) => onChange(e.target.value)} />
+      </label>
+    </div>
+  );
+}
+
 const LABELS = {
   pin: "Pino", route: "Rota", arrow: "Seta", line: "Linha", rect: "Retângulo",
   circle: "Círculo", highlight: "Marca-texto", blur: "Borrão", text: "Texto", icon: "Ícone",
@@ -385,13 +404,8 @@ export default function ImageEditor({ value, onSave, onClose }) {
                 </button>
               ))}
               <span className="ie-tool-div" />
-              <div className="ie-colors">
-                {PALETTE.slice(0, 7).map((p) => (
-                  <button key={p.v} className={`ie-col${color === p.v ? " on" : ""}`} title={p.name}
-                          style={{ background: p.v }}
-                          onClick={() => { setColor(p.v); if (cur) patch(cur.id, { color: p.v }); }} />
-                ))}
-              </div>
+              <Swatches value={color} few
+                        onChange={(v) => { setColor(v); if (cur) patch(cur.id, { color: v }); }} />
             </div>
 
             {/* Never inside .ie-tools — that bar scrolls and would hide these. */}
@@ -568,12 +582,7 @@ function TextDialog({ t, onSave, onCancel }) {
                         onChange={(e) => set({ box: e.target.checked })} /> Caixa de fundo</label>
         </div>
         <div className="ie-f"><span>Cor</span>
-          <div className="ie-swatches">
-            {PALETTE.map((p) => (
-              <button key={p.v} className={`ie-col${v.color === p.v ? " on" : ""}`} title={p.name}
-                      style={{ background: p.v }} onClick={() => set({ color: p.v })} />
-            ))}
-          </div>
+          <Swatches value={v.color} onChange={(c) => set({ color: c })} />
         </div>
         <div className="ie-bgacts">
           <button className="ie-btn" onClick={onCancel}>Cancelar</button>
@@ -651,12 +660,7 @@ function Props({ l, patch, onEditText }) {
         </>
       )}
       {l.type !== "blur" && l.type !== "icon" && (
-        <div className="ie-swatches">
-          {PALETTE.map((p) => (
-            <button key={p.v} className={`ie-col${l.color === p.v ? " on" : ""}`} title={p.name}
-                    style={{ background: p.v }} onClick={() => patch(l.id, { color: p.v })} />
-          ))}
-        </div>
+        <Swatches value={l.color} onChange={(v) => patch(l.id, { color: v })} />
       )}
     </div>
   );
