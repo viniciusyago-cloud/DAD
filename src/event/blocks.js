@@ -64,7 +64,8 @@ export const textStyle = (p, label) => [
 export const STYLE_FIELDS = [
   { type: "heading", label: "Título da seção" },
   { key: "_titleIcon", type: "image", label: "Ícone do título" },
-  { key: "_titleIconSize", type: "number", label: "Tamanho do ícone (px)", min: 10, max: 90 },
+  { key: "_titleIconSize", type: "number", label: "Tamanho do ícone (px)", min: 10, max: 90,
+    when: (b) => !!b._titleIcon },
   { key: "_titleColor", type: "color", label: "Cor do título" },
   { key: "_titleFont", type: "select", label: "Fonte", options: FONTS },
   { key: "_titleSize", type: "number", label: "Tamanho (px)", min: 9, max: 46 },
@@ -82,15 +83,17 @@ export const STYLE_FIELDS = [
     { v: "none", l: "Transparente" }, { v: "panel", l: "Painel" }, { v: "well", l: "Afundado" },
     { v: "frame", l: "Painel dourado" }, { v: "solid", l: "Cor sólida" },
     { v: "grad", l: "Gradiente" }, { v: "image", l: "Imagem" } ] },
-  { key: "_bgColor", type: "color", label: "Cor do fundo" },
-  { key: "_bgColor2", type: "color", label: "Segunda cor (gradiente)" },
-  { key: "_bgAngle", type: "number", label: "Ângulo do gradiente", min: 0, max: 360 },
-  { key: "_bgImage", type: "image", label: "Imagem de fundo" },
-  { key: "_bgDim", type: "number", label: "Escurecer imagem (%)", min: 0, max: 95 },
+  { key: "_bgColor", type: "color", label: "Cor do fundo", when: (b) => b._bg === "solid" || b._bg === "grad" },
+  { key: "_bgColor2", type: "color", label: "Segunda cor (gradiente)", when: (b) => b._bg === "grad" },
+  { key: "_bgAngle", type: "number", label: "Ângulo do gradiente", min: 0, max: 360,
+    when: (b) => b._bg === "grad" },
+  { key: "_bgImage", type: "image", label: "Imagem de fundo", when: (b) => b._bg === "image" },
+  { key: "_bgDim", type: "number", label: "Escurecer imagem (%)", min: 0, max: 95,
+    when: (b) => b._bg === "image" && !!b._bgImage },
 
   { type: "heading", label: "Moldura e sombra" },
   { key: "_frame", type: "select", label: "Moldura", options: FRAMES },
-  { key: "_frameColor", type: "color", label: "Cor da moldura" },
+  { key: "_frameColor", type: "color", label: "Cor da moldura", when: (b) => (b._frame || "none") !== "none" },
   { key: "_radius", type: "number", label: "Cantos (px)", min: 0, max: 34 },
   { key: "_shadow", type: "select", label: "Sombra", options: [
     { v: "none", l: "Nenhuma" }, { v: "soft", l: "Suave" }, { v: "deep", l: "Profunda" },
@@ -109,7 +112,7 @@ export const STYLE_FIELDS = [
 
   { type: "heading", label: "Animação" },
   { key: "_anim", type: "select", label: "Entrada (ao rolar)", options: ANIM_IN },
-  { key: "_animDelay", type: "number", label: "Atraso (ms)", min: 0, max: 2000 },
+  { key: "_animDelay", type: "number", label: "Atraso (ms)", min: 0, max: 2000, when: (b) => !!b._anim },
   { key: "_loop", type: "select", label: "Contínua", options: LOOPS },
 ];
 
@@ -587,7 +590,7 @@ export const BLOCKS = {
   },
   howwewin: {
     label: "Como vencemos", group: "Batalha",
-    defaults: { label: "How we win", items: [{ title: "Title", text: "Why it matters." }] },
+    defaults: { ...baseStyle, _bg: "panel", label: "How we win", items: [{ title: "Title", text: "Why it matters." }] },
     fields: [
       { key: "items", type: "list", label: "Passos", addLabel: "Adicionar passo", titleKey: "title", item: [
         { key: "title", type: "text", label: "Título" },
@@ -639,7 +642,7 @@ export const BLOCKS = {
   },
   phases: {
     label: "Fases da batalha", group: "Batalha",
-    defaults: { label: "The phases", marks: "0, 20, 40, 60",
+    defaults: { ...baseStyle, _bg: "panel", label: "The phases", marks: "0, 20, 40, 60",
       items: [{ name: "Phase", span: "0–20 min", color: "#ecc25a", weight: 20, points: "Point 1\nPoint 2" }] },
     fields: [
       { key: "marks", type: "text", label: "Marcas de tempo (separe por vírgula)" },
@@ -654,7 +657,7 @@ export const BLOCKS = {
   },
   buildings: {
     label: "Prédios", group: "Batalha",
-    defaults: { label: "The buildings", items: [{ img: "", name: "Building", codes: "", pts: "", note: "", hot: false }] },
+    defaults: { ...baseStyle, _bg: "panel", label: "The buildings", items: [{ img: "", name: "Building", codes: "", pts: "", note: "", hot: false }] },
     fields: [
       { key: "items", type: "list", label: "Prédios", addLabel: "Adicionar prédio", titleKey: "name", item: [
         { key: "img", type: "image", label: "Imagem" },
@@ -670,7 +673,7 @@ export const BLOCKS = {
   },
   rules: {
     label: "Regras", group: "Batalha",
-    defaults: { label: "Key rules", items: [{ icon: "star", image: "", title: "Rule", text: "Description." }] },
+    defaults: { ...baseStyle, _bg: "panel", label: "Key rules", items: [{ icon: "star", image: "", title: "Rule", text: "Description." }] },
     fields: [
       { key: "items", type: "list", label: "Regras", addLabel: "Adicionar regra", titleKey: "title", item: [
         { key: "icon", type: "select", label: "Ícone", options: [
@@ -687,7 +690,7 @@ export const BLOCKS = {
   },
   marches: {
     label: "Marchas / Esquadrões", group: "Batalha",
-    defaults: { label: "Your marches", items: [{ title: "March 1", text: "Your best heroes" }],
+    defaults: { ...baseStyle, _bg: "panel", label: "Your marches", items: [{ title: "March 1", text: "Your best heroes" }],
       notes: [] },
     fields: [
       { key: "items", type: "list", label: "Marchas", addLabel: "Adicionar marcha", titleKey: "title", item: [

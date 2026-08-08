@@ -267,9 +267,24 @@ export default function EventEditor() {
             <div className="ev-insp-b">
               {(tab === "style" && !schema?.raw
                 ? [...STYLE_FIELDS, ...(schema.styleFields || [])]
-                : contentFields).map((f) => (
-                <Field key={f.key || `h-${f.label}`} field={f} value={current[f.key]}
-                       onChange={(v) => patch(current.id, { [f.key]: v })} />
+                : contentFields)
+                /* A control whose precondition isn't met can't change anything —
+                   showing it anyway is what makes the editor feel broken. */
+                .filter((f) => !f.when || f.when(current))
+                .map((f) => (
+                <React.Fragment key={f.key || `h-${f.label}`}>
+                  <Field field={f} value={current[f.key]}
+                         onChange={(v) => patch(current.id, { [f.key]: v })} />
+                  {/* Nothing to style until the section has a title, and a
+                      control that silently does nothing reads as broken. */}
+                  {f.type === "heading" && f.label === "Título da seção"
+                    && !current._title && !current.label && !current._titleIcon && (
+                    <div className="f-hint">
+                      Este bloco ainda não tem título — preencha <b>Título da seção</b> na aba
+                      <b> Conteúdo</b> para que os ajustes abaixo apareçam.
+                    </div>
+                  )}
+                </React.Fragment>
               ))}
               {schema?.container && (
                 <div className="f-hint" style={{ marginTop: 4 }}>
