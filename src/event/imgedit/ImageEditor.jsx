@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { supabase } from "../../supabaseClient.js";
 import { normImg, ANIMS, useNatural } from "./Pic.jsx";
 import { PALETTE } from "../blocks.js";
@@ -7,25 +7,45 @@ import { loadImage, autoColor, pickColor, removeBackground, trimTransparent, can
 
 /* ============================================================
    IMAGE / TACTICAL ANNOTATION EDITOR
-   Crop + pins + routes + arrows + shapes + text + icons,
-   each with an optional animation. Saved as vector data.
+   Crop, background removal, and layers you can place, move,
+   resize and animate. Saved as vector data, never baked pixels.
+
+   Confirm actions ("Aplicar corte", "Concluir rota") live in
+   their own bar, NOT in the horizontally scrolling toolbar —
+   there, `margin-left:auto` parked them past the visible area
+   and the crop tool looked broken because you could not reach
+   the button that commits it.
    ============================================================ */
 
 const TOOLS = [
-  { k: "select", l: "Selecionar", d: "M4 3l14 7-6 2-2 6z" },
-  { k: "pin",    l: "Pino",       d: "M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z M12 10h.01" },
-  { k: "route",  l: "Rota",       d: "M3 20l6-7 4 4 8-11" },
-  { k: "arrow",  l: "Seta",       d: "M4 20L20 4M20 4h-7M20 4v7" },
-  { k: "rect",   l: "Retângulo",  d: "M4 5h16v14H4z" },
-  { k: "circle", l: "Círculo",    d: "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z" },
-  { k: "text",   l: "Texto",      d: "M5 6h14M12 6v13" },
-  { k: "icon",   l: "Ícone",      d: "M12 3l2.6 5.6 6 .8-4.4 4.2 1.1 6L12 16.7 6.7 19.6l1.1-6L3.4 9.4l6-.8z" },
-  { k: "crop",   l: "Cortar",     d: "M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14" },
-  { k: "bg",     l: "Remover fundo", d: "M4 4h7v7H4zM13 13h7v7h-7zM13 4h7v7h-7zM4 13h7v7H4z" },
+  { k: "select",    l: "Selecionar",    d: "M4 3l14 7-6 2-2 6z" },
+  { k: "pin",       l: "Pino",          d: "M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z M12 10h.01" },
+  { k: "text",      l: "Texto",         d: "M5 6h14M12 6v13" },
+  { k: "icon",      l: "Ícone da biblioteca", d: "M12 3l2.6 5.6 6 .8-4.4 4.2 1.1 6L12 16.7 6.7 19.6l1.1-6L3.4 9.4l6-.8z" },
+  { k: "route",     l: "Rota",          d: "M3 20l6-7 4 4 8-11" },
+  { k: "arrow",     l: "Seta",          d: "M4 20L20 4M20 4h-7M20 4v7" },
+  { k: "line",      l: "Linha",         d: "M4 20 20 4" },
+  { k: "rect",      l: "Retângulo",     d: "M4 5h16v14H4z" },
+  { k: "circle",    l: "Círculo",       d: "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z" },
+  { k: "highlight", l: "Marca-texto",   d: "M3 17h18M6 13l6-9 6 9z" },
+  { k: "blur",      l: "Borrar",        d: "M5 5h4v4H5zM15 5h4v4h-4zM10 10h4v4h-4zM5 15h4v4H5zM15 15h4v4h-4z" },
+  { k: "crop",      l: "Cortar",        d: "M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14" },
+  { k: "bg",        l: "Remover fundo", d: "M4 4h7v7H4zM13 13h7v7h-7zM13 4h7v7h-7zM4 13h7v7H4z" },
 ];
 
+/* tools committed by dragging a rectangle */
+const DRAG_TOOLS = new Set(["arrow", "line", "rect", "circle", "highlight", "blur"]);
 
 const uid = () => `l${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+
+/* Sizes are a fraction of the image's short side, so an annotation that
+   looks right on a banner is not a monster on a 64px icon. */
+const DEF = { pin: 0.055, text: 0.09, icon: 0.14, stroke: 0.02, hl: 0.07 };
+
+const LABELS = {
+  pin: "Pino", route: "Rota", arrow: "Seta", line: "Linha", rect: "Retângulo",
+  circle: "Círculo", highlight: "Marca-texto", blur: "Borrão", text: "Texto", icon: "Ícone",
+};
 
 export default function ImageEditor({ value, onSave, onClose }) {
   const base = normImg(value);
@@ -35,87 +55,164 @@ export default function ImageEditor({ value, onSave, onClose }) {
   const [tool, setTool] = useState("select");
   const [sel, setSel] = useState(null);
   const [color, setColor] = useState("#ecc25a");
-  const [draft, setDraft] = useState(null);      // in-progress shape / route
+  const [draft, setDraft] = useState(null);
   const [cropDraft, setCropDraft] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [iconPick, setIconPick] = useState(false);
-  const [bg, setBg] = useState(null);   // { color, tolerance, mode, feather, trim, preview, busy, err }
+  const [iconAt, setIconAt] = useState(null);
+  const [bg, setBg] = useState(null);
+  const [textEdit, setTextEdit] = useState(null);
+
   const stage = useRef(null);
   const drag = useRef(null);
   const fileRef = useRef(null);
+  const past = useRef([]);
+  const future = useRef([]);
 
   const nat = useNatural(src) || { w: 1600, h: 900 };
-  const cur = layers.find((l) => l.id === sel) || null;
   const c = crop || { x: 0, y: 0, w: 1, h: 1 };
+  const W = nat.w * c.w, H = nat.h * c.h;
+  const S = Math.min(W, H);
+  const X = (x) => x * W, Y = (y) => y * H;
+  const cur = layers.find((l) => l.id === sel) || null;
 
-  /* --- pointer helpers: normalised 0..1 in the CROPPED space --- */
-  const pt = (e) => {
-    const r = stage.current.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width;
-    const py = (e.clientY - r.top) / r.height;
-    return [Math.min(1, Math.max(0, px)), Math.min(1, Math.max(0, py))];
+  /* ---------------- history ---------------- */
+  const snap = useCallback(() => {
+    past.current.push(JSON.stringify({ layers, crop }));
+    if (past.current.length > 60) past.current.shift();
+    future.current = [];
+  }, [layers, crop]);
+
+  const apply = (raw) => { const s = JSON.parse(raw); setLayers(s.layers); setCrop(s.crop); setSel(null); };
+  const undo = () => {
+    if (!past.current.length) return;
+    future.current.push(JSON.stringify({ layers, crop }));
+    apply(past.current.pop());
+  };
+  const redo = () => {
+    if (!future.current.length) return;
+    past.current.push(JSON.stringify({ layers, crop }));
+    apply(future.current.pop());
   };
 
-  const add = (l) => { const n = { id: uid(), ...l }; setLayers((p) => [...p, n]); setSel(n.id); return n; };
+  /* ---------------- layers ---------------- */
+  const add = (l) => { snap(); const n = { id: uid(), ...l }; setLayers((p) => [...p, n]); setSel(n.id); return n; };
   const patch = (id, p) => setLayers((ls) => ls.map((l) => (l.id === id ? { ...l, ...p } : l)));
-  const del = (id) => { setLayers((ls) => ls.filter((l) => l.id !== id)); if (sel === id) setSel(null); };
-  const moveZ = (id, d) => setLayers((ls) => {
-    const i = ls.findIndex((l) => l.id === id), j = i + d;
-    if (j < 0 || j >= ls.length) return ls;
-    const c2 = [...ls]; [c2[i], c2[j]] = [c2[j], c2[i]]; return c2;
-  });
+  const del = (id) => { snap(); setLayers((ls) => ls.filter((l) => l.id !== id)); if (sel === id) setSel(null); };
+  const dup = (id) => {
+    const l = layers.find((x) => x.id === id); if (!l) return;
+    snap();
+    const n = { ...JSON.parse(JSON.stringify(l)), id: uid() };
+    const d = 0.04;
+    if (n.pts) n.pts = n.pts.map(([a, b]) => [a + d, b + d]);
+    else { n.x += d; n.y += d; if (n.x2 != null) { n.x2 += d; n.y2 += d; } }
+    setLayers((ls) => [...ls, n]); setSel(n.id);
+  };
+  const moveZ = (id, dir) => {
+    snap();
+    setLayers((ls) => {
+      const i = ls.findIndex((l) => l.id === id), j = i + dir;
+      if (i < 0 || j < 0 || j >= ls.length) return ls;
+      const copy = [...ls]; [copy[i], copy[j]] = [copy[j], copy[i]]; return copy;
+    });
+  };
 
-  /* --- stage interaction --- */
+  /* -------- keyboard: nudge, delete, undo/redo -------- */
+  useEffect(() => {
+    const onKey = (e) => {
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      const k = e.key.toLowerCase();
+      if ((e.metaKey || e.ctrlKey) && k === "z") { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+      if (!cur) return;
+      if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); del(cur.id); return; }
+      const step = e.shiftKey ? 0.02 : 0.004;
+      const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      if (cur.pts) patch(cur.id, { pts: cur.pts.map(([x, y]) => [x + d[0], y + d[1]]) });
+      else if (cur.x2 != null) patch(cur.id, { x: cur.x + d[0], y: cur.y + d[1], x2: cur.x2 + d[0], y2: cur.y2 + d[1] });
+      else patch(cur.id, { x: cur.x + d[0], y: cur.y + d[1] });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [cur, layers, crop]);
+
+  /* ---------------- pointer ---------------- */
+  const pt = (e) => {
+    const r = stage.current.getBoundingClientRect();
+    return [Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)),
+            Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))];
+  };
+
   const onDown = (e) => {
     if (!src) return;
     const [x, y] = pt(e);
+
     if (tool === "bg") { bgPrepare([x, y]); return; }
     if (tool === "crop") { setCropDraft({ x, y, x2: x, y2: y }); return; }
+
     if (tool === "select") {
+      const h = e.target?.dataset?.handle;
+      if (h && cur) { snap(); drag.current = { mode: "size", id: cur.id, h, from: { ...cur } }; return; }
       const hit = hitTest(x, y, layers);
       setSel(hit ? hit.id : null);
-      if (hit) drag.current = { id: hit.id, ox: x, oy: y, snap: { ...hit } };
+      if (hit) { snap(); drag.current = { mode: "move", id: hit.id, ox: x, oy: y, from: { ...hit } }; }
       return;
     }
     if (tool === "pin") {
       const n = layers.filter((l) => l.type === "pin").length + 1;
-      add({ type: "pin", x, y, label: String(n), color, size: 16, anim: "" });
+      add({ type: "pin", x, y, label: String(n), color, size: DEF.pin, anim: "" });
       setTool("select"); return;
     }
     if (tool === "text") {
-      const t = prompt("Texto:");
-      if (t) add({ type: "text", x, y, text: t, color, size: 26, anim: "" });
-      setTool("select"); return;
-    }
-    if (tool === "icon") { setIconPick({ x, y }); return; }
-    if (tool === "route") {
-      setDraft((d) => d && d.type === "route"
-        ? { ...d, pts: [...d.pts, [x, y]] }
-        : { type: "route", pts: [[x, y]], color, width: 7, arrow: true, anim: "" });
+      setTextEdit({ x, y, text: "", color, size: DEF.text, weight: 800, font: "sans",
+                    align: "start", rot: 0, box: false, outline: true, anim: "" });
       return;
     }
-    // drag-created shapes
-    setDraft({ type: tool, x, y, x2: x, y2: y, color, width: 5, fill: tool !== "arrow", anim: "" });
+    if (tool === "icon") { setIconAt({ x, y }); return; }
+    if (tool === "route") {
+      setDraft((d) => (d && d.type === "route"
+        ? { ...d, pts: [...d.pts, [x, y]] }
+        : { type: "route", pts: [[x, y]], color, width: DEF.stroke, arrow: true, anim: "" }));
+      return;
+    }
+    if (DRAG_TOOLS.has(tool)) {
+      setDraft({
+        type: tool, x, y, x2: x, y2: y, color, anim: "",
+        width: tool === "highlight" ? DEF.hl : DEF.stroke,
+        fill: tool === "rect" || tool === "circle" ? false : undefined,
+        ...(tool === "blur" ? { amount: 8, round: true } : null),
+      });
+    }
   };
 
   const onMove = (e) => {
     if (cropDraft) { const [x, y] = pt(e); setCropDraft((d) => ({ ...d, x2: x, y2: y })); return; }
-    if (drag.current) {
+    const d = drag.current;
+    if (d) {
       const [x, y] = pt(e);
-      const { id, ox, oy, snap } = drag.current;
-      const dx = x - ox, dy = y - oy;
-      if (snap.type === "route") patch(id, { pts: snap.pts.map(([px, py]) => [px + dx, py + dy]) });
-      else if (snap.x2 != null) patch(id, { x: snap.x + dx, y: snap.y + dy, x2: snap.x2 + dx, y2: snap.y2 + dy });
-      else patch(id, { x: snap.x + dx, y: snap.y + dy });
+      const f = d.from;
+      if (d.mode === "size") {
+        if (f.x2 != null) {
+          patch(d.id, d.h === "se" ? { x2: x, y2: y } : d.h === "nw" ? { x, y }
+            : d.h === "ne" ? { x2: x, y } : { x, y2: y });
+        } else {
+          patch(d.id, { size: Math.max(0.02, Math.min(0.7, Math.hypot(x - f.x, y - f.y) * 1.7)) });
+        }
+        return;
+      }
+      const dx = x - d.ox, dy = y - d.oy;
+      if (f.pts) patch(d.id, { pts: f.pts.map(([px, py]) => [px + dx, py + dy]) });
+      else if (f.x2 != null) patch(d.id, { x: f.x + dx, y: f.y + dy, x2: f.x2 + dx, y2: f.y2 + dy });
+      else patch(d.id, { x: f.x + dx, y: f.y + dy });
       return;
     }
-    if (draft && draft.type !== "route") { const [x, y] = pt(e); setDraft((d) => ({ ...d, x2: x, y2: y })); }
+    if (draft && draft.type !== "route") { const [x, y] = pt(e); setDraft((v) => ({ ...v, x2: x, y2: y })); }
   };
 
   const onUp = () => {
     drag.current = null;
     if (draft && draft.type !== "route") {
-      const big = Math.abs(draft.x2 - draft.x) > 0.01 || Math.abs(draft.y2 - draft.y) > 0.01;
+      const big = Math.abs(draft.x2 - draft.x) > 0.012 || Math.abs(draft.y2 - draft.y) > 0.012;
       if (big) add(draft);
       setDraft(null); setTool("select");
     }
@@ -131,15 +228,14 @@ export default function ImageEditor({ value, onSave, onClose }) {
     const x = Math.min(cropDraft.x, cropDraft.x2), y = Math.min(cropDraft.y, cropDraft.y2);
     const w = Math.abs(cropDraft.x2 - cropDraft.x), h = Math.abs(cropDraft.y2 - cropDraft.y);
     if (w < 0.03 || h < 0.03) { setCropDraft(null); return; }
-    // compose with any existing crop, and re-map layer coords into the new space
-    const nx = c.x + x * c.w, ny = c.y + y * c.h, nw = c.w * w, nh = c.h * h;
+    snap();
+    const mx = (v) => (v - x) / w, my = (v) => (v - y) / h;
     setLayers((ls) => ls.map((l) => {
-      const mx = (v) => (v - x) / w, my = (v) => (v - y) / h;
-      if (l.type === "route") return { ...l, pts: l.pts.map(([px, py]) => [mx(px), my(py)]) };
+      if (l.pts) return { ...l, pts: l.pts.map(([px, py]) => [mx(px), my(py)]) };
       if (l.x2 != null) return { ...l, x: mx(l.x), y: my(l.y), x2: mx(l.x2), y2: my(l.y2) };
       return { ...l, x: mx(l.x), y: my(l.y) };
     }));
-    setCrop({ x: nx, y: ny, w: nw, h: nh });
+    setCrop({ x: c.x + x * c.w, y: c.y + y * c.h, w: c.w * w, h: c.h * h });
     setCropDraft(null); setTool("select");
   };
 
@@ -147,9 +243,10 @@ export default function ImageEditor({ value, onSave, onClose }) {
     if (!file) return;
     setBusy(true);
     try {
-      const ext = (file.name.split(".").pop() || "png").toLowerCase();
+      const ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
       const path = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await supabase.storage.from("event-assets").upload(path, file, { cacheControl: "31536000" });
+      const { error } = await supabase.storage.from("event-assets")
+        .upload(path, file, { cacheControl: "31536000", contentType: file.type || undefined });
       if (error) throw error;
       setSrc(supabase.storage.from("event-assets").getPublicUrl(path).data.publicUrl);
       setCrop(null);
@@ -157,9 +254,8 @@ export default function ImageEditor({ value, onSave, onClose }) {
     finally { setBusy(false); }
   };
 
-  /* ---------- background removal ---------- */
-  const bgSrcData = useRef(null);   // untouched pixels of the current image
-
+  /* ---------------- background removal ---------------- */
+  const bgData = useRef(null);
   const bgPrepare = useCallback(async (pickAt) => {
     setBg((b) => ({ ...(b || {}), busy: true, err: "" }));
     try {
@@ -168,34 +264,32 @@ export default function ImageEditor({ value, onSave, onClose }) {
       cv.width = img.naturalWidth; cv.height = img.naturalHeight;
       const ctx = cv.getContext("2d", { willReadFrequently: true });
       ctx.drawImage(img, 0, 0);
-      const data = ctx.getImageData(0, 0, cv.width, cv.height);   // throws if cross-origin blocked
-      bgSrcData.current = data;
-      const color = pickAt
+      bgData.current = ctx.getImageData(0, 0, cv.width, cv.height);
+      const col = pickAt
         ? pickColor(ctx, Math.min(cv.width - 1, Math.round(pickAt[0] * cv.width)),
                          Math.min(cv.height - 1, Math.round(pickAt[1] * cv.height)))
         : autoColor(ctx, cv.width, cv.height);
-      setBg({ color, tolerance: 30, mode: "edge", feather: 6, trim: false, busy: false, err: "" });
+      setBg({ color: col, tolerance: 30, mode: "edge", feather: 6, trim: false, busy: false, err: "" });
     } catch (e) {
       console.error(e);
       setBg({ err: "Não consegui ler os pixels desta imagem (bloqueio de origem). Envie-a do aparelho e tente de novo.", busy: false });
     }
   }, [src]);
 
-  const bgPreviewUrl = useMemo(() => {
-    if (!bg || bg.err || !bgSrcData.current || !bg.color) return null;
-    const d = bgSrcData.current;
-    const out = removeBackground(d, bg);
+  const bgPreview = useMemo(() => {
+    if (!bg || bg.err || bg.busy || !bgData.current || !bg.color) return null;
+    const d = bgData.current;
     const cv = document.createElement("canvas");
     cv.width = d.width; cv.height = d.height;
-    cv.getContext("2d").putImageData(out, 0, 0);
+    cv.getContext("2d").putImageData(removeBackground(d, bg), 0, 0);
     return cv.toDataURL("image/png");
   }, [bg]);
 
   const bgApply = async () => {
-    if (!bg || !bgSrcData.current) return;
+    if (!bg || !bgData.current) return;
     setBusy(true);
     try {
-      const d = bgSrcData.current;
+      const d = bgData.current;
       let cv = document.createElement("canvas");
       cv.width = d.width; cv.height = d.height;
       cv.getContext("2d").putImageData(removeBackground(d, bg), 0, 0);
@@ -208,14 +302,17 @@ export default function ImageEditor({ value, onSave, onClose }) {
       setSrc(supabase.storage.from("event-assets").getPublicUrl(path).data.publicUrl);
       if (bg.trim) setCrop(null);
       setBg(null); setTool("select");
-    } catch (e) { console.error(e); alert("Falha ao aplicar. Tente de novo."); }
+    } catch (e) { console.error(e); alert("Falha ao aplicar."); }
     finally { setBusy(false); }
   };
 
   const save = () => onSave(layers.length || crop ? { src, crop, layers } : src);
 
-  const W = nat.w * c.w, H = nat.h * c.h;
-  const X = (x) => x * W, Y = (y) => y * H;
+  const hint = tool === "bg" ? "Clique numa área do fundo para escolher a cor"
+    : tool === "crop" ? "Arraste a área que quer manter, depois “Aplicar corte”"
+    : tool === "route" ? "Clique para adicionar pontos, depois “Concluir rota”"
+    : tool === "select" ? "Clique para selecionar · arraste para mover · setas ajustam · Delete apaga"
+    : "Clique ou arraste sobre a imagem";
 
   return (
     <div className="ie-modal" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -240,7 +337,6 @@ export default function ImageEditor({ value, onSave, onClose }) {
           </div>
         ) : (
           <div className="ie-body">
-            {/* toolbar */}
             <div className="ie-tools">
               {TOOLS.map((t) => (
                 <button key={t.k} className={`ie-tool${tool === t.k ? " on" : ""}`} title={t.l}
@@ -255,27 +351,45 @@ export default function ImageEditor({ value, onSave, onClose }) {
               <span className="ie-tool-div" />
               <div className="ie-colors">
                 {PALETTE.slice(0, 7).map((p) => (
-                  <button key={p.v} className={`ie-col${color === p.v ? " on" : ""}`}
-                          style={{ background: p.v }} onClick={() => { setColor(p.v); if (cur) patch(cur.id, { color: p.v }); }} />
+                  <button key={p.v} className={`ie-col${color === p.v ? " on" : ""}`} title={p.name}
+                          style={{ background: p.v }}
+                          onClick={() => { setColor(p.v); if (cur) patch(cur.id, { color: p.v }); }} />
                 ))}
               </div>
-              {draft?.type === "route" && (
-                <button className="ie-btn ie-btn-gold ie-finish" onClick={finishRoute}>
-                  Concluir rota ({draft.pts.length})
-                </button>
-              )}
-              {cropDraft && <button className="ie-btn ie-btn-gold ie-finish" onClick={applyCrop}>Aplicar corte</button>}
-              {crop && !cropDraft && <button className="ie-btn ie-finish" onClick={() => setCrop(null)}>Remover corte</button>}
             </div>
 
-            {/* stage */}
+            {/* Never inside .ie-tools — that bar scrolls and would hide these. */}
+            <div className="ie-acts">
+              <button className="ie-mini" onClick={undo} title="Desfazer (Ctrl+Z)">↺</button>
+              <button className="ie-mini" onClick={redo} title="Refazer (Ctrl+Shift+Z)">↻</button>
+              <span className="ie-hint">{hint}</span>
+              {draft?.type === "route" && (
+                <button className="ie-btn ie-btn-gold" onClick={finishRoute}>Concluir rota ({draft.pts.length})</button>
+              )}
+              {cropDraft && <button className="ie-btn ie-btn-gold" onClick={applyCrop}>Aplicar corte</button>}
+              {crop && !cropDraft && (
+                <button className="ie-btn" onClick={() => { snap(); setCrop(null); }}>Remover corte</button>
+              )}
+            </div>
+
             <div className="ie-stagewrap">
               <div className="ie-stage" ref={stage} onPointerDown={onDown} onPointerMove={onMove}
                    onPointerUp={onUp} onPointerLeave={onUp}
                    style={{ aspectRatio: `${W} / ${H}`, cursor: tool === "select" ? "default" : "crosshair" }}>
-                <img src={bgPreviewUrl || src} alt="" draggable="false"
+                <img src={bgPreview || src} alt="" draggable="false"
                      style={{ position: "absolute", width: `${100 / c.w}%`, height: `${100 / c.h}%`,
                               left: `${(-c.x * 100) / c.w}%`, top: `${(-c.y * 100) / c.h}%`, objectFit: "cover" }} />
+
+                {layers.filter((l) => l.type === "blur").map((l) => (
+                  <span key={l.id} className="ie-blur" style={{
+                    left: `${Math.min(l.x, l.x2) * 100}%`, top: `${Math.min(l.y, l.y2) * 100}%`,
+                    width: `${Math.abs(l.x2 - l.x) * 100}%`, height: `${Math.abs(l.y2 - l.y) * 100}%`,
+                    backdropFilter: `blur(${l.amount || 8}px)`,
+                    WebkitBackdropFilter: `blur(${l.amount || 8}px)`,
+                    borderRadius: l.round ? 8 : 0,
+                  }} />
+                ))}
+
                 <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="ie-svg">
                   <defs>
                     {[...layers, draft].filter((l) => l && (l.type === "route" || l.type === "arrow")).map((l, i) => (
@@ -285,139 +399,44 @@ export default function ImageEditor({ value, onSave, onClose }) {
                       </marker>
                     ))}
                   </defs>
-                  {layers.map((l) => <Shape key={l.id} l={l} X={X} Y={Y} selected={l.id === sel} />)}
-                  {draft && <Shape l={{ ...draft, id: "draft" }} X={X} Y={Y} ghost />}
-                  {cropDraft && (
-                    <rect x={X(Math.min(cropDraft.x, cropDraft.x2))} y={Y(Math.min(cropDraft.y, cropDraft.y2))}
-                          width={Math.abs(X(cropDraft.x2) - X(cropDraft.x))} height={Math.abs(Y(cropDraft.y2) - Y(cropDraft.y))}
-                          fill="#ecc25a22" stroke="#ecc25a" strokeWidth={W / 260} strokeDasharray={`${W / 90} ${W / 130}`} />
-                  )}
+                  {layers.filter((l) => l.type !== "blur").map((l) => (
+                    <Shape key={l.id} l={l} X={X} Y={Y} S={S} selected={l.id === sel} />
+                  ))}
+                  {draft && draft.type !== "blur" && <Shape l={{ ...draft, id: "draft" }} X={X} Y={Y} S={S} ghost />}
+                  {(draft?.type === "blur" || cropDraft) && (() => {
+                    const d = cropDraft || draft;
+                    return <rect x={X(Math.min(d.x, d.x2))} y={Y(Math.min(d.y, d.y2))}
+                                 width={Math.abs(X(d.x2) - X(d.x))} height={Math.abs(Y(d.y2) - Y(d.y))}
+                                 fill="#ecc25a22" stroke="#ecc25a" strokeWidth={S * 0.006}
+                                 strokeDasharray={`${S * 0.02} ${S * 0.015}`} />;
+                  })()}
+                  {cur && <Handles l={cur} X={X} Y={Y} S={S} />}
                 </svg>
-              </div>
-              <div className="ie-hint">
-                {tool === "bg" ? "Clique numa área do fundo para escolher a cor · ajuste ao lado"
-                  : tool === "route" ? "Clique para adicionar pontos · depois “Concluir rota”"
-                  : tool === "crop" ? "Arraste a área que quer manter"
-                  : tool === "select" ? "Clique para selecionar · arraste para mover"
-                  : "Clique ou arraste sobre a imagem"}
               </div>
             </div>
 
-            {/* inspector */}
             <aside className="ie-side">
-              {bg && (
-                <div className="ie-bgpanel">
-                  <div className="ie-side-h">Remover fundo</div>
-                  {bg.err ? <div className="f-err">{bg.err}</div> : bg.busy ? (
-                    <div className="ie-none">Lendo a imagem…</div>
-                  ) : (
-                    <>
-                      <div className="ie-f">
-                        <span>Cor removida — clique na imagem para trocar</span>
-                        <div className="ie-bgcolor">
-                          <i style={{ background: `rgb(${bg.color.join(",")})` }} />
-                          <code>rgb({bg.color.join(", ")})</code>
-                        </div>
-                      </div>
-                      <div className="ie-f">
-                        <span>Alcance {bg.tolerance}</span>
-                        <input type="range" min="1" max="100" value={bg.tolerance}
-                               onChange={(e) => setBg({ ...bg, tolerance: +e.target.value })} />
-                      </div>
-                      <div className="ie-f">
-                        <span>Suavizar borda {bg.feather}</span>
-                        <input type="range" min="0" max="20" value={bg.feather}
-                               onChange={(e) => setBg({ ...bg, feather: +e.target.value })} />
-                      </div>
-                      <div className="ie-f">
-                        <span>Modo</span>
-                        <select value={bg.mode} onChange={(e) => setBg({ ...bg, mode: e.target.value })}>
-                          <option value="edge">Só o fundo em volta</option>
-                          <option value="all">Essa cor em toda a imagem</option>
-                        </select>
-                      </div>
-                      <label className="ie-f ie-f-row">
-                        <span>Cortar sobras vazias</span>
-                        <input type="checkbox" checked={!!bg.trim}
-                               onChange={(e) => setBg({ ...bg, trim: e.target.checked })} />
-                      </label>
-                      <div className="ie-bgacts">
-                        <button className="ie-btn" onClick={() => { setBg(null); setTool("select"); }}>Cancelar</button>
-                        <button className="ie-btn ie-btn-gold" onClick={bgApply} disabled={busy}>
-                          {busy ? "Aplicando…" : "Aplicar (PNG)"}
-                        </button>
-                      </div>
-                      <div className="ie-bghint">Vira um PNG transparente. GIF animado perde a animação.</div>
-                    </>
-                  )}
-                </div>
-              )}
+              {bg && <BgPanel bg={bg} setBg={setBg} onApply={bgApply}
+                              onCancel={() => { setBg(null); setTool("select"); }} busy={busy} />}
 
               <div className="ie-side-h">Camadas</div>
               <div className="ie-layers">
                 {layers.length === 0 && <div className="ie-none">Nenhuma anotação ainda.</div>}
                 {layers.map((l, i) => (
-                  <div key={l.id} className={`ie-layer${l.id === sel ? " on" : ""}`} onClick={() => setSel(l.id)}>
-                    <i style={{ background: l.color }} />
-                    <span>{labelOf(l)}</span>
-                    <button onClick={(e) => { e.stopPropagation(); moveZ(l.id, -1); }} disabled={i === 0}>↑</button>
-                    <button onClick={(e) => { e.stopPropagation(); moveZ(l.id, 1); }} disabled={i === layers.length - 1}>↓</button>
-                    <button className="x" onClick={(e) => { e.stopPropagation(); del(l.id); }}>×</button>
+                  <div className={`ie-layer${l.id === sel ? " on" : ""}`} key={l.id} onClick={() => setSel(l.id)}>
+                    <i style={{ background: l.color || "#8aa" }} />
+                    <span>{l.type === "text" ? `Texto “${(l.text || "").slice(0, 12)}”`
+                      : l.type === "pin" ? `Pino ${l.label || ""}`
+                      : l.type === "route" ? `Rota (${(l.pts || []).length})` : LABELS[l.type] || l.type}</span>
+                    <button onClick={(e) => { e.stopPropagation(); moveZ(l.id, -1); }} disabled={i === 0} title="Para trás">↑</button>
+                    <button onClick={(e) => { e.stopPropagation(); moveZ(l.id, 1); }} disabled={i === layers.length - 1} title="Para frente">↓</button>
+                    <button onClick={(e) => { e.stopPropagation(); dup(l.id); }} title="Duplicar">⧉</button>
+                    <button className="x" onClick={(e) => { e.stopPropagation(); del(l.id); }} title="Apagar">×</button>
                   </div>
                 ))}
               </div>
 
-              {cur && (
-                <div className="ie-props">
-                  <div className="ie-side-h">Propriedades</div>
-                  {cur.type === "text" && (
-                    <label className="ie-f"><span>Texto</span>
-                      <input value={cur.text || ""} onChange={(e) => patch(cur.id, { text: e.target.value })} /></label>
-                  )}
-                  {cur.type === "pin" && (
-                    <label className="ie-f"><span>Rótulo</span>
-                      <input value={cur.label || ""} onChange={(e) => patch(cur.id, { label: e.target.value })} /></label>
-                  )}
-                  {(cur.type === "pin" || cur.type === "text" || cur.type === "icon") && (
-                    <label className="ie-f"><span>Tamanho</span>
-                      <input type="range" min="8" max="90" value={cur.size || 20}
-                             onChange={(e) => patch(cur.id, { size: +e.target.value })} /></label>
-                  )}
-                  {(cur.type === "route" || cur.type === "arrow" || cur.type === "rect" || cur.type === "circle") && (
-                    <label className="ie-f"><span>Espessura</span>
-                      <input type="range" min="2" max="24" value={cur.width || 6}
-                             onChange={(e) => patch(cur.id, { width: +e.target.value })} /></label>
-                  )}
-                  {(cur.type === "rect" || cur.type === "circle") && (
-                    <label className="ie-f ie-f-row"><span>Preenchido</span>
-                      <input type="checkbox" checked={!!cur.fill} onChange={(e) => patch(cur.id, { fill: e.target.checked })} /></label>
-                  )}
-                  {cur.type === "route" && (
-                    <label className="ie-f ie-f-row"><span>Ponta de seta</span>
-                      <input type="checkbox" checked={cur.arrow !== false} onChange={(e) => patch(cur.id, { arrow: e.target.checked })} /></label>
-                  )}
-                  <label className="ie-f"><span>Animação</span>
-                    <select value={cur.anim || ""} onChange={(e) => patch(cur.id, { anim: e.target.value })}>
-                      {ANIMS.map((a) => <option key={a.v} value={a.v}>{a.l}</option>)}
-                    </select></label>
-                  {cur.anim && (
-                    <>
-                      <label className="ie-f"><span>Duração {cur.dur || 2}s</span>
-                        <input type="range" min="0.4" max="8" step="0.2" value={cur.dur || 2}
-                               onChange={(e) => patch(cur.id, { dur: +e.target.value })} /></label>
-                      <label className="ie-f"><span>Atraso {cur.delay || 0}s</span>
-                        <input type="range" min="0" max="6" step="0.2" value={cur.delay || 0}
-                               onChange={(e) => patch(cur.id, { delay: +e.target.value })} /></label>
-                    </>
-                  )}
-                  <div className="ie-swatches">
-                    {PALETTE.map((p) => (
-                      <button key={p.v} className={`ie-col${cur.color === p.v ? " on" : ""}`}
-                              style={{ background: p.v }} onClick={() => patch(cur.id, { color: p.v })} />
-                    ))}
-                  </div>
-                </div>
-              )}
+              {cur && <Props l={cur} patch={patch} onEditText={() => setTextEdit({ ...cur, editing: true })} />}
 
               <button className="ie-btn ie-replace" onClick={() => fileRef.current?.click()} disabled={busy}>
                 {busy ? "Enviando…" : "Trocar imagem"}
@@ -426,12 +445,22 @@ export default function ImageEditor({ value, onSave, onClose }) {
           </div>
         )}
 
-        {iconPick && (
+        {iconAt && (
           <AssetPicker title="Escolha um ícone"
-            onClose={() => { setIconPick(false); setTool("select"); }}
+            onClose={() => { setIconAt(null); setTool("select"); }}
             onPick={(url) => {
-              add({ type: "icon", x: iconPick.x, y: iconPick.y, src: url, size: 44, anim: "" });
-              setIconPick(false); setTool("select");
+              add({ type: "icon", x: iconAt.x, y: iconAt.y, src: url, size: DEF.icon, anim: "" });
+              setIconAt(null); setTool("select");
+            }} />
+        )}
+
+        {textEdit && (
+          <TextDialog t={textEdit}
+            onCancel={() => { setTextEdit(null); setTool("select"); }}
+            onSave={(t) => {
+              if (t.editing) { snap(); patch(t.id, t); }
+              else if (t.text.trim()) add({ ...t, type: "text" });
+              setTextEdit(null); setTool("select");
             }} />
         )}
 
@@ -442,80 +471,302 @@ export default function ImageEditor({ value, onSave, onClose }) {
   );
 }
 
-const labelOf = (l) => ({
-  pin: `Pino ${l.label || ""}`, route: `Rota (${(l.pts || []).length} pts)`, arrow: "Seta",
-  rect: "Retângulo", circle: "Círculo", text: `Texto “${(l.text || "").slice(0, 14)}”`, icon: "Ícone",
-}[l.type] || l.type);
+/* ---------------- text dialog (replaces window.prompt) ---------------- */
+function TextDialog({ t, onSave, onCancel }) {
+  const [v, setV] = useState(t);
+  const set = (p) => setV((s) => ({ ...s, ...p }));
+  return (
+    <div className="ie-modal ie-sub" onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
+      <div className="ie-textdlg">
+        <b>Texto</b>
+        <textarea className="ie-ta" rows={3} autoFocus placeholder="Escreva aqui… (Enter quebra linha)"
+                  value={v.text} onChange={(e) => set({ text: e.target.value })} />
+        <div className="ie-td-grid">
+          <label className="ie-f"><span>Fonte</span>
+            <select value={v.font || "sans"} onChange={(e) => set({ font: e.target.value })}>
+              <option value="sans">Sem serifa</option>
+              <option value="display">Serifada</option>
+              <option value="mono">Monoespaçada</option>
+            </select></label>
+          <label className="ie-f"><span>Peso</span>
+            <select value={v.weight || 800} onChange={(e) => set({ weight: +e.target.value })}>
+              <option value={400}>Normal</option><option value={700}>Negrito</option><option value={800}>Extra</option>
+            </select></label>
+          <label className="ie-f"><span>Alinhamento</span>
+            <select value={v.align || "start"} onChange={(e) => set({ align: e.target.value })}>
+              <option value="start">Esquerda</option><option value="middle">Centro</option><option value="end">Direita</option>
+            </select></label>
+        </div>
+        <label className="ie-f"><span>Tamanho — {Math.round((v.size ?? DEF.text) * 100)}</span>
+          <input type="range" min="2" max="45" value={Math.round((v.size ?? DEF.text) * 100)}
+                 onChange={(e) => set({ size: +e.target.value / 100 })} /></label>
+        <label className="ie-f"><span>Rotação — {v.rot || 0}°</span>
+          <input type="range" min="-90" max="90" value={v.rot || 0}
+                 onChange={(e) => set({ rot: +e.target.value })} /></label>
+        <div className="ie-td-togs">
+          <label><input type="checkbox" checked={v.outline !== false}
+                        onChange={(e) => set({ outline: e.target.checked })} /> Contorno escuro</label>
+          <label><input type="checkbox" checked={!!v.box}
+                        onChange={(e) => set({ box: e.target.checked })} /> Caixa de fundo</label>
+        </div>
+        <div className="ie-f"><span>Cor</span>
+          <div className="ie-swatches">
+            {PALETTE.map((p) => (
+              <button key={p.v} className={`ie-col${v.color === p.v ? " on" : ""}`} title={p.name}
+                      style={{ background: p.v }} onClick={() => set({ color: p.v })} />
+            ))}
+          </div>
+        </div>
+        <div className="ie-bgacts">
+          <button className="ie-btn" onClick={onCancel}>Cancelar</button>
+          <button className="ie-btn ie-btn-gold" onClick={() => onSave(v)} disabled={!v.text.trim()}>
+            {t.editing ? "Salvar" : "Adicionar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- per-layer properties ---------------- */
+function Props({ l, patch, onEditText }) {
+  const stroky = ["route", "arrow", "line", "rect", "circle", "highlight"].includes(l.type);
+  return (
+    <div className="ie-props">
+      <div className="ie-side-h">Propriedades</div>
+
+      {l.type === "text" && (
+        <button className="ie-btn ie-full" onClick={onEditText}>Editar texto e formatação</button>
+      )}
+      {l.type === "pin" && (
+        <label className="ie-f"><span>Rótulo</span>
+          <input value={l.label || ""} onChange={(e) => patch(l.id, { label: e.target.value })} /></label>
+      )}
+      {["pin", "icon", "text"].includes(l.type) && (
+        <label className="ie-f"><span>Tamanho — {Math.round((l.size ?? DEF.text) * 100)}</span>
+          <input type="range" min="2" max="45" value={Math.round((l.size ?? DEF.text) * 100)}
+                 onChange={(e) => patch(l.id, { size: +e.target.value / 100 })} /></label>
+      )}
+      {stroky && (
+        <label className="ie-f"><span>Espessura — {Math.round((l.width ?? DEF.stroke) * 100)}</span>
+          <input type="range" min="1" max="22" value={Math.round((l.width ?? DEF.stroke) * 100)}
+                 onChange={(e) => patch(l.id, { width: +e.target.value / 100 })} /></label>
+      )}
+      {l.type === "blur" && (
+        <>
+          <label className="ie-f"><span>Intensidade — {l.amount || 8}</span>
+            <input type="range" min="2" max="30" value={l.amount || 8}
+                   onChange={(e) => patch(l.id, { amount: +e.target.value })} /></label>
+          <label className="ie-f ie-row"><span>Cantos arredondados</span>
+            <input type="checkbox" checked={!!l.round}
+                   onChange={(e) => patch(l.id, { round: e.target.checked })} /></label>
+        </>
+      )}
+      {(l.type === "rect" || l.type === "circle") && (
+        <label className="ie-f ie-row"><span>Preenchido</span>
+          <input type="checkbox" checked={!!l.fill}
+                 onChange={(e) => patch(l.id, { fill: e.target.checked })} /></label>
+      )}
+      {l.type === "route" && (
+        <label className="ie-f ie-row"><span>Ponta de seta</span>
+          <input type="checkbox" checked={l.arrow !== false}
+                 onChange={(e) => patch(l.id, { arrow: e.target.checked })} /></label>
+      )}
+      {l.type !== "blur" && (
+        <label className="ie-f"><span>Opacidade — {Math.round((l.opacity ?? 1) * 100)}%</span>
+          <input type="range" min="10" max="100" value={Math.round((l.opacity ?? 1) * 100)}
+                 onChange={(e) => patch(l.id, { opacity: +e.target.value / 100 })} /></label>
+      )}
+
+      <label className="ie-f"><span>Animação</span>
+        <select value={l.anim || ""} onChange={(e) => patch(l.id, { anim: e.target.value })}>
+          {ANIMS.map((a) => <option key={a.v} value={a.v}>{a.l}</option>)}
+        </select></label>
+      {l.anim && (
+        <>
+          <label className="ie-f"><span>Duração — {l.dur || 2}s</span>
+            <input type="range" min="0.4" max="8" step="0.2" value={l.dur || 2}
+                   onChange={(e) => patch(l.id, { dur: +e.target.value })} /></label>
+          <label className="ie-f"><span>Atraso — {l.delay || 0}s</span>
+            <input type="range" min="0" max="6" step="0.2" value={l.delay || 0}
+                   onChange={(e) => patch(l.id, { delay: +e.target.value })} /></label>
+        </>
+      )}
+      {l.type !== "blur" && l.type !== "icon" && (
+        <div className="ie-swatches">
+          {PALETTE.map((p) => (
+            <button key={p.v} className={`ie-col${l.color === p.v ? " on" : ""}`} title={p.name}
+                    style={{ background: p.v }} onClick={() => patch(l.id, { color: p.v })} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BgPanel({ bg, setBg, onApply, onCancel, busy }) {
+  return (
+    <div className="ie-bgpanel">
+      <div className="ie-side-h">Remover fundo</div>
+      {bg.err ? <div className="ie-err">{bg.err}</div> : bg.busy ? <div className="ie-none">Lendo a imagem…</div> : (
+        <>
+          <div className="ie-f"><span>Cor removida — clique na imagem para trocar</span>
+            <div className="ie-bgcolor">
+              <i style={{ background: `rgb(${bg.color.join(",")})` }} />
+              <code>rgb({bg.color.join(", ")})</code>
+            </div>
+          </div>
+          <label className="ie-f"><span>Alcance — {bg.tolerance}</span>
+            <input type="range" min="1" max="100" value={bg.tolerance}
+                   onChange={(e) => setBg({ ...bg, tolerance: +e.target.value })} /></label>
+          <label className="ie-f"><span>Suavizar borda — {bg.feather}</span>
+            <input type="range" min="0" max="20" value={bg.feather}
+                   onChange={(e) => setBg({ ...bg, feather: +e.target.value })} /></label>
+          <label className="ie-f"><span>Modo</span>
+            <select value={bg.mode} onChange={(e) => setBg({ ...bg, mode: e.target.value })}>
+              <option value="edge">Só o fundo em volta</option>
+              <option value="all">Essa cor em toda a imagem</option>
+            </select></label>
+          <label className="ie-f ie-row"><span>Cortar sobras vazias</span>
+            <input type="checkbox" checked={!!bg.trim}
+                   onChange={(e) => setBg({ ...bg, trim: e.target.checked })} /></label>
+          <div className="ie-bgacts">
+            <button className="ie-btn" onClick={onCancel}>Cancelar</button>
+            <button className="ie-btn ie-btn-gold" onClick={onApply} disabled={busy}>
+              {busy ? "Aplicando…" : "Aplicar (PNG)"}
+            </button>
+          </div>
+          <div className="ie-bghint">Vira um PNG transparente. GIF animado perde a animação.</div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ---------------- resize handles ---------------- */
+function Handles({ l, X, Y, S }) {
+  const r = S * 0.016;
+  /* A route is moved by its points, not by corners; everything else with an
+     x2 (blur included — it is a rectangle even though it paints in HTML)
+     gets four corner handles, and point layers get one to scale by. */
+  const pts = l.pts ? []
+    : l.x2 != null
+      ? [["nw", l.x, l.y], ["ne", l.x2, l.y], ["sw", l.x, l.y2], ["se", l.x2, l.y2]]
+      : [["se", (l.x || 0) + (l.size ?? DEF.text) * 0.75, (l.y || 0) + (l.size ?? DEF.text) * 0.75]];
+  return (
+    <g>
+      {pts.map(([k, x, y]) => (
+        <circle key={k} data-handle={k} cx={X(x)} cy={Y(y)} r={r} className="ie-handle"
+                fill="#ecc25a" stroke="#0d1218" strokeWidth={r * 0.35} />
+      ))}
+    </g>
+  );
+}
 
 function hitTest(x, y, layers) {
-  const near = (a, b, t = 0.035) => Math.abs(a - b) < t;
+  const near = (a, b, t) => Math.abs(a - b) < t;
   for (let i = layers.length - 1; i >= 0; i--) {
     const l = layers[i];
-    if (l.type === "route") { if ((l.pts || []).some(([px, py]) => near(px, x) && near(py, y))) return l; }
+    if (l.pts) { if (l.pts.some(([px, py]) => near(px, x, 0.035) && near(py, y, 0.035))) return l; }
     else if (l.x2 != null) {
-      const x0 = Math.min(l.x, l.x2), x1 = Math.max(l.x, l.x2);
-      const y0 = Math.min(l.y, l.y2), y1 = Math.max(l.y, l.y2);
-      if (x >= x0 - 0.02 && x <= x1 + 0.02 && y >= y0 - 0.02 && y <= y1 + 0.02) return l;
-    } else if (near(l.x, x, 0.05) && near(l.y, y, 0.05)) return l;
+      const x0 = Math.min(l.x, l.x2) - 0.02, x1 = Math.max(l.x, l.x2) + 0.02;
+      const y0 = Math.min(l.y, l.y2) - 0.02, y1 = Math.max(l.y, l.y2) + 0.02;
+      if (x >= x0 && x <= x1 && y >= y0 && y <= y1) return l;
+    } else if (near(l.x, x, 0.07) && near(l.y, y, 0.07)) return l;
   }
   return null;
 }
 
-/* editor-side shape drawing (no animation, plus selection halo) */
-function Shape({ l, X, Y, selected, ghost }) {
-  const c = l.color || "#ecc25a";
-  const o = ghost ? 0.75 : 1;
+/* Editor-side drawing. Mirrors Pic.jsx, plus a halo on the selected layer. */
+function Shape({ l, X, Y, S, selected, ghost }) {
+  const col = l.color || "#ecc25a";
+  const o = (ghost ? 0.75 : 1) * (l.opacity ?? 1);
   const halo = selected ? { filter: "drop-shadow(0 0 6px #ecc25a)" } : undefined;
+  /* values > 1 are legacy absolute pixels; <= 1 are fractions of the short side */
+  const abs = (v, def) => { const n = v == null || v === "" ? def : Number(v); return n > 1 ? n : n * S; };
+
   switch (l.type) {
     case "pin": {
-      const r = l.size || 16;
+      const r = abs(l.size, DEF.pin);
       return (
         <g transform={`translate(${X(l.x)} ${Y(l.y)})`} opacity={o} style={halo}>
-          <circle r={r + 4} fill="#0d1218" opacity="0.55" />
-          <circle r={r} fill={c} stroke="#0d1218" strokeWidth="2.5" />
+          <circle r={r + S * 0.012} fill="#0d1218" opacity="0.55" />
+          <circle r={r} fill={col} stroke="#0d1218" strokeWidth={r * 0.16} />
           {l.label && <text y={r * 0.36} textAnchor="middle" fill="#0d1218"
                             style={{ font: `800 ${r * 1.05}px system-ui, sans-serif` }}>{l.label}</text>}
         </g>
       );
     }
-    case "icon":
-      return <image href={l.src} x={X(l.x) - (l.size || 32) / 2} y={Y(l.y) - (l.size || 32) / 2}
-                    width={l.size || 32} height={l.size || 32} opacity={o} style={halo} />;
+    case "icon": {
+      const s = abs(l.size, DEF.icon);
+      return <image href={l.src} x={X(l.x) - s / 2} y={Y(l.y) - s / 2} width={s} height={s}
+                    opacity={o} style={halo} preserveAspectRatio="xMidYMid meet" />;
+    }
     case "text": {
-      const s = l.size || 26;
-      return <text x={X(l.x)} y={Y(l.y)} fill={c} stroke="#0d1218" strokeWidth={s * 0.22} paintOrder="stroke"
-                   opacity={o} style={{ font: `800 ${s}px system-ui, sans-serif`, ...halo }}>{l.text}</text>;
+      const s = abs(l.size, DEF.text);
+      const fam = l.font === "display" ? "Georgia, 'Times New Roman', serif"
+        : l.font === "mono" ? "ui-monospace, Menlo, monospace" : "system-ui, sans-serif";
+      const lines = String(l.text || "").split("\n");
+      const wide = Math.max(...lines.map((t) => t.length), 1);
+      return (
+        <g opacity={o} style={halo}
+           transform={l.rot ? `rotate(${l.rot} ${X(l.x)} ${Y(l.y)})` : undefined}>
+          {l.box && (
+            <rect x={X(l.x) - s * 0.35} y={Y(l.y) - s * 0.95}
+                  width={wide * s * 0.56 + s * 0.7} height={lines.length * s * 1.25 + s * 0.3}
+                  rx={s * 0.25} fill="#0d1218" fillOpacity={0.72} />
+          )}
+          <text x={X(l.x)} y={Y(l.y)} textAnchor={l.align || "start"} fill={col}
+                stroke={l.outline === false ? "none" : "#0d1218"}
+                strokeWidth={l.outline === false ? 0 : s * 0.22} paintOrder="stroke"
+                style={{ font: `${l.weight || 800} ${s}px ${fam}` }}>
+            {lines.map((t, i) => <tspan key={i} x={X(l.x)} dy={i === 0 ? 0 : s * 1.25}>{t}</tspan>)}
+          </text>
+        </g>
+      );
     }
     case "route": {
       const pts = (l.pts || []).map(([x, y]) => `${X(x)},${Y(y)}`).join(" ");
       if (!pts) return null;
+      const w = abs(l.width, DEF.stroke);
       return (
         <g opacity={o} style={halo}>
-          <polyline points={pts} fill="none" stroke="#0d1218" strokeWidth={(l.width || 6) + 5} strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
-          <polyline points={pts} fill="none" stroke={c} strokeWidth={l.width || 6} strokeLinecap="round" strokeLinejoin="round"
+          <polyline points={pts} fill="none" stroke="#0d1218" strokeWidth={w + S * 0.012}
+                    strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
+          <polyline points={pts} fill="none" stroke={col} strokeWidth={w}
+                    strokeLinecap="round" strokeLinejoin="round"
                     markerEnd={l.arrow === false ? undefined : `url(#eh-${l.id})`} />
-          {(l.pts || []).map(([x, y], i) => <circle key={i} cx={X(x)} cy={Y(y)} r={(l.width || 6) * 0.9} fill={c} stroke="#0d1218" strokeWidth="2" />)}
+          {(l.pts || []).map(([x, y], i) => (
+            <circle key={i} cx={X(x)} cy={Y(y)} r={w * 0.9} fill={col} stroke="#0d1218" strokeWidth={w * 0.3} />
+          ))}
         </g>
       );
     }
-    case "arrow":
+    case "arrow": case "line": {
+      const w = abs(l.width, DEF.stroke);
       return (
         <g opacity={o} style={halo}>
-          <line x1={X(l.x)} y1={Y(l.y)} x2={X(l.x2)} y2={Y(l.y2)} stroke="#0d1218" strokeWidth={(l.width || 6) + 5} strokeLinecap="round" opacity="0.5" />
-          <line x1={X(l.x)} y1={Y(l.y)} x2={X(l.x2)} y2={Y(l.y2)} stroke={c} strokeWidth={l.width || 6} strokeLinecap="round" markerEnd={`url(#eh-${l.id})`} />
+          <line x1={X(l.x)} y1={Y(l.y)} x2={X(l.x2)} y2={Y(l.y2)} stroke="#0d1218"
+                strokeWidth={w + S * 0.012} strokeLinecap="round" opacity="0.5" />
+          <line x1={X(l.x)} y1={Y(l.y)} x2={X(l.x2)} y2={Y(l.y2)} stroke={col} strokeWidth={w}
+                strokeLinecap="round" markerEnd={l.type === "arrow" ? `url(#eh-${l.id})` : undefined} />
         </g>
       );
+    }
+    case "highlight":
+      return <line x1={X(l.x)} y1={Y(l.y)} x2={X(l.x2)} y2={Y(l.y2)} stroke={col}
+                   strokeWidth={abs(l.width, DEF.hl)} strokeLinecap="round"
+                   opacity={(l.opacity ?? 0.42) * (ghost ? 0.7 : 1)} style={halo} />;
     case "rect":
       return <rect x={X(Math.min(l.x, l.x2))} y={Y(Math.min(l.y, l.y2))}
-                   width={Math.abs(X(l.x2) - X(l.x))} height={Math.abs(Y(l.y2) - Y(l.y))} rx={l.radius ?? 4}
-                   fill={l.fill ? c : "none"} fillOpacity={l.fill ? 0.22 : 0} stroke={c} strokeWidth={l.width || 5}
-                   opacity={o} style={halo} />;
-    case "circle": {
-      const rx = Math.abs(X(l.x2) - X(l.x)) / 2, ry = Math.abs(Y(l.y2) - Y(l.y)) / 2;
-      return <ellipse cx={X(l.x) + (X(l.x2) - X(l.x)) / 2} cy={Y(l.y) + (Y(l.y2) - Y(l.y)) / 2} rx={rx} ry={ry}
-                      fill={l.fill ? c : "none"} fillOpacity={l.fill ? 0.22 : 0} stroke={c} strokeWidth={l.width || 5}
-                      opacity={o} style={halo} />;
-    }
+                   width={Math.abs(X(l.x2) - X(l.x))} height={Math.abs(Y(l.y2) - Y(l.y))} rx={S * 0.012}
+                   fill={l.fill ? col : "none"} fillOpacity={l.fill ? 0.22 : 0} stroke={col}
+                   strokeWidth={abs(l.width, DEF.stroke)} opacity={o} style={halo} />;
+    case "circle":
+      return <ellipse cx={X(l.x) + (X(l.x2) - X(l.x)) / 2} cy={Y(l.y) + (Y(l.y2) - Y(l.y)) / 2}
+                      rx={Math.abs(X(l.x2) - X(l.x)) / 2} ry={Math.abs(Y(l.y2) - Y(l.y)) / 2}
+                      fill={l.fill ? col : "none"} fillOpacity={l.fill ? 0.22 : 0} stroke={col}
+                      strokeWidth={abs(l.width, DEF.stroke)} opacity={o} style={halo} />;
     default: return null;
   }
 }
