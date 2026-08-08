@@ -8,14 +8,45 @@
    Plus tolerance and edge feathering for clean cut-outs.
    ============================================================ */
 
-export function loadImage(src) {
-  return new Promise((resolve, reject) => {
+const rawLoad = (src, cors) =>
+  new Promise((resolve, reject) => {
     const im = new Image();
-    im.crossOrigin = "anonymous";
+    if (cors) im.crossOrigin = "anonymous";
     im.onload = () => resolve(im);
     im.onerror = () => reject(new Error("load"));
     im.src = src;
   });
+
+const sameOrigin = (src) => {
+  if (/^(data:|blob:)/.test(src)) return true;
+  try { return new URL(src, location.href).origin === location.origin; }
+  catch { return false; }
+};
+
+/**
+ * Load an image whose pixels we are allowed to read.
+ *
+ * Setting crossOrigin on an <img> is not enough on its own: the editor has
+ * already shown the same URL through a plain <img>, and the browser may serve
+ * the CORS request from that non-CORS cache entry, which taints the canvas.
+ * Fetching the bytes and handing them over as a blob: URL sidesteps the whole
+ * problem, because a blob is same-origin and can never taint anything.
+ */
+export async function loadImage(src) {
+  if (sameOrigin(src)) return rawLoad(src, false);
+
+  try {
+    const res = await fetch(src, { mode: "cors" });
+    if (!res.ok) throw new Error(`http ${res.status}`);
+    const url = URL.createObjectURL(await res.blob());
+    try {
+      return await rawLoad(url, false);   // decoded here, so the URL is free after
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  } catch {
+    return rawLoad(src, true);            // last resort: a CORS-tagged <img>
+  }
 }
 
 const dist = (r, g, b, tr, tg, tb) =>
